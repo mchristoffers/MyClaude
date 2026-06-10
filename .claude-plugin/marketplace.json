@@ -1,0 +1,17 @@
+{
+  "name": "myclaude",
+  "owner": {
+    "name": "Moritz Christoffers"
+  },
+  "metadata": {
+    "description": "Personal Claude Code marketplace — skills, commands & agents synced across machines.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "my-skills",
+      "source": "./plugins/my-skills",
+      "description": "Personal skills bundle. Add your own skills under plugins/my-skills/skills/."
+    }
+  ]
+}
