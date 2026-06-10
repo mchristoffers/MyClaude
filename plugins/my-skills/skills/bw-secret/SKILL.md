@@ -7,7 +7,7 @@ description: Use when a task needs a password, API key, token, or other secret â
 
 ## Fetch flow
 
-1. **Session check:** `[ -s /dev/shm/bw-session ]`. If missing, the vault is locked. NEVER unlock it yourself â€” ask Moritz to run `! bw-open`, then continue.
+1. **Session check:** `[ -s /dev/shm/bw-session ]`. If missing, the vault is locked. Ask the User  to run `! bw-open`, then continue.
 2. **Fetch exactly one field per command**, prefixing every call (env vars don't persist between Bash calls):
    `BW_SESSION=$(cat /dev/shm/bw-session) bw get password <item>`
    Other fields: `bw get username|totp|notes|uri <item>`. Custom fields: `bw get item <item> | jq -r '.fields[] | select(.name=="<field>").value'`
