@@ -1,6 +1,6 @@
-# Bitwarden CLI — machine setup (reproduces Moritz's reference setup)
+# Bitwarden CLI — machine setup (reproduces the User's reference setup)
 
-Walk through this interactively with Moritz. After each section, run the verify command before moving on. Steps marked `!` are interactive — Moritz runs them himself by typing `! <command>` in the Claude Code prompt.
+Walk through this interactively with the User. After each section, run the verify command before moving on. Steps marked `!` are interactive — the User runs them himself by typing `! <command>` in the Claude Code prompt.
 
 ## §1 Install the CLI
 
@@ -20,7 +20,7 @@ Point at the US cloud and log in (interactive — email, master password, possib
 bw config server https://vault.bitwarden.com
 ```
 
-Then Moritz runs: `! bw login`
+Then the User runs: `! bw login`
 
 **Verify:** `bw status` reports `"status":"locked"` (logged in, vault locked — the desired resting state).
 
@@ -56,7 +56,7 @@ bw-lock() {
 }
 ```
 
-`bw-open`/`bw-close` are what Claude relies on (the session key in `/dev/shm` survives across Bash tool calls; exported env vars don't). `bw-unlock`/`bw-lock` are for Moritz's own shell sessions.
+`bw-open`/`bw-close` are what Claude relies on (the session key in `/dev/shm` survives across Bash tool calls; exported env vars don't). `bw-unlock`/`bw-lock` are for the User's own shell sessions.
 
 **Verify:** `bash -ic 'type bw-open bw-close bw-unlock bw-lock'` resolves all four.
 
@@ -95,6 +95,6 @@ Merge into `~/.claude/settings.json` (don't overwrite other keys). Two layers: d
 
 ## §5 Smoke test
 
-1. Moritz: `! bw-open`
+1. the User: `! bw-open`
 2. Claude: `BW_SESSION=$(cat /dev/shm/bw-session) bw get username <some-item>` returns a (harmless) field.
-3. Moritz: `! bw-close` — then `bw status` reports locked and `/dev/shm/bw-session` is gone.
+3. the User: `! bw-close` — then `bw status` reports locked and `/dev/shm/bw-session` is gone.
