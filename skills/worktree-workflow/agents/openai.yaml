@@ -1,4 +1,0 @@
-interface:
-  display_name: "Worktree Workflow"
-  short_description: "Run every repository change in a worktree"
-  default_prompt: "Use $worktree-workflow to complete this repository change in an isolated worktree."

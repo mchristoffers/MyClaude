@@ -6,26 +6,24 @@ other compatible coding agents, distributed with Vercel's
 
 ## Available skill
 
-### `worktree-workflow`
+### `feature-workflow`
 
-Runs every Git-repository change in an isolated worktree. It preserves the
-primary checkout, keeps temporary progress notes, verifies the change, commits
-and pushes the feature branch, and waits for explicit approval before merging
-and cleaning up.
+Completes every Git-repository change autonomously in a worktree, including
+verification, commits, pushes, merge, and cleanup.
 
 ## Install
 
 Install the skill globally for Claude Code and Codex:
 
 ```sh
-npx skills add mchristoffers/MyClaude --skill worktree-workflow --global \
+npx skills add mchristoffers/MyClaude --skill feature-workflow --global \
   --agent claude-code --agent codex
 ```
 
 Update the installed skill after changes are published here:
 
 ```sh
-npx skills update worktree-workflow --global --yes
+npx skills update feature-workflow --global --yes
 ```
 
 List the skills in this repository without installing them:
@@ -36,7 +34,7 @@ npx skills add mchristoffers/MyClaude --list
 
 ## Activate the workflow persistently
 
-Copy the block from [`templates/worktree-workflow.md`](templates/worktree-workflow.md)
+Copy the block from [`templates/feature-workflow.md`](templates/feature-workflow.md)
 into any persistent instruction scope where the workflow should apply:
 
 - Repository-wide Codex instructions: `AGENTS.md`
@@ -59,10 +57,10 @@ Claude Code can consume the same file through a minimal `CLAUDE.md`:
 
 ```text
 skills/
-└── worktree-workflow/
+└── feature-workflow/
     ├── SKILL.md
     └── agents/
         └── openai.yaml
 templates/
-└── worktree-workflow.md
+└── feature-workflow.md
 ```
