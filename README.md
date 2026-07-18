@@ -4,19 +4,26 @@ Personal [Agent Skills](https://agentskills.io/) for Claude Code, Codex, and
 other compatible coding agents, distributed with Vercel's
 [`skills`](https://github.com/vercel-labs/skills) CLI.
 
-## Available skill
+## Available skills
 
 ### `feature-workflow`
 
 Completes every Git-repository change autonomously in a worktree, including
 verification, commits, pushes, merge, and cleanup.
 
+### `discover-workflows`
+
+Analyzes chats and suggests repeated, stable workflows as new Agent Skills.
+
 ## Install
 
-Install the skill globally for Claude Code and Codex:
+Install either skill globally for Claude Code and Codex:
 
 ```sh
 npx skills add mchristoffers/MyClaude --skill feature-workflow --global \
+  --agent claude-code --agent codex
+
+npx skills add mchristoffers/MyClaude --skill discover-workflows --global \
   --agent claude-code --agent codex
 ```
 
@@ -24,6 +31,7 @@ Update the installed skill after changes are published here:
 
 ```sh
 npx skills update feature-workflow --global --yes
+npx skills update discover-workflows --global --yes
 ```
 
 List the skills in this repository without installing them:
@@ -57,6 +65,10 @@ Claude Code can consume the same file through a minimal `CLAUDE.md`:
 
 ```text
 skills/
+├── discover-workflows/
+│   ├── SKILL.md
+│   └── agents/
+│       └── openai.yaml
 └── feature-workflow/
     ├── SKILL.md
     └── agents/
