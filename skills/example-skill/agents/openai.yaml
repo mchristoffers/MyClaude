@@ -1,4 +1,0 @@
-interface:
-  display_name: "Example Skill"
-  short_description: "Verify that Agent Skills load correctly"
-  default_prompt: "Use $example-skill to verify that this skills repository is installed correctly."
