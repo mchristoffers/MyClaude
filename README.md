@@ -1,81 +1,41 @@
-# MyClaude
+# My Skills
 
-My personal [Claude Code](https://claude.com/claude-code) marketplace — skills,
-commands and agents, versioned in one repo and synced across all my machines.
+Personal [Agent Skills](https://agentskills.io/) that can be installed in Claude
+Code, Codex, and other supported coding agents with Vercel's
+[`skills`](https://github.com/vercel-labs/skills) CLI.
+
+## Install
+
+Install all skills globally for Claude Code and Codex:
+
+```sh
+npx skills add mchristoffers/MyClaude --skill '*' --global \
+  --agent claude-code --agent codex
+```
+
+List the available skills without installing them:
+
+```sh
+npx skills add mchristoffers/MyClaude --list
+```
 
 ## Layout
 
-```
-MyClaude/
-├── .claude-plugin/
-│   └── marketplace.json        # the marketplace manifest (lists plugins)
-└── plugins/
-    └── my-skills/              # one plugin = one installable bundle
-        ├── .claude-plugin/
-        │   └── plugin.json     # plugin manifest
-        └── skills/
-            └── hello-marketplace/
-                └── SKILL.md     # example skill (smoke test)
+```text
+skills/
+└── example-skill/
+    ├── SKILL.md
+    └── agents/
+        └── openai.yaml
 ```
 
-A **marketplace** is just this git repo + `marketplace.json`. It lists one or
-more **plugins**. Each plugin can contain `skills/`, `commands/`, `agents/`,
-`hooks/`, etc. Skills live under `plugins/<plugin>/skills/<skill>/SKILL.md`.
+Each skill is a self-contained directory whose `SKILL.md` contains YAML
+frontmatter with its `name` and `description`, followed by the instructions an
+agent loads when the skill is used.
 
-## Install on a new machine
+Create another skill with:
 
 ```sh
-/plugin marketplace add mchristoffers/MyClaude
-/plugin install my-skills@myclaude
+cd skills
+npx skills init my-new-skill
 ```
-
-`mchristoffers/MyClaude` is the GitHub `owner/repo` shorthand; a full git URL or
-local path works too. `myclaude` is the marketplace `name` from
-`marketplace.json` (not the repo name).
-
-### Or: auto-enable from settings (no manual install per machine)
-
-Add this to your synced `~/.claude/settings.json` so a freshly-cloned machine
-provisions itself:
-
-```jsonc
-{
-  "extraKnownMarketplaces": {
-    "myclaude": {
-      "source": { "source": "github", "repo": "mchristoffers/MyClaude" }
-    }
-  },
-  "enabledPlugins": {
-    "my-skills@myclaude": true
-  }
-}
-```
-
-## Update everywhere
-
-After pushing changes here:
-
-```sh
-/plugin marketplace update myclaude
-```
-
-Existing installs pick up the new skills on next launch.
-
-## Add a new skill
-
-1. `mkdir -p plugins/my-skills/skills/<skill-name>`
-2. Create `plugins/my-skills/skills/<skill-name>/SKILL.md` with frontmatter:
-
-   ```markdown
-   ---
-   name: <skill-name>
-   description: Use when … (be specific — this is how Claude decides to load it)
-   ---
-
-   <instructions Claude follows once the skill is invoked>
-   ```
-
-3. Commit & push, then `/plugin marketplace update myclaude` on each machine.
-
-Want to split skills into themed bundles? Add another plugin directory under
-`plugins/` and register it in `marketplace.json`.

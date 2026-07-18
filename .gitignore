@@ -1,9 +1,6 @@
-# OS / editor cruft
 .DS_Store
 *.swp
 .idea/
 .vscode/
-
-# Never commit secrets that might sneak in alongside Claude config
 .env
 *.local.json
