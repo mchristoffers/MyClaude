@@ -1,11 +1,11 @@
 ---
 name: feature-workflow
-description: "Use for every task that changes a Git repository, including small code, documentation, and configuration edits. Complete the entire change autonomously in a worktree: implement, verify, commit, push, merge, push the default branch, and clean up. Skip only read-only tasks."
+description: "Use only when implementing a new product or code feature in a Git repository. Do not use for bug fixes, refactors, maintenance, documentation, configuration, or read-only tasks. Complete the feature autonomously in a worktree through verification, merge, push, and cleanup."
 ---
 
 # Workflow
 
-Always use a worktree — even for small changes.
+Always use a worktree for new features.
 
 1. Inspect the repository and reuse or create a worktree without touching user changes.
 2. Create an ignored `.agent-work/PROGRESS.md` and keep it current.

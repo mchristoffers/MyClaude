@@ -8,8 +8,8 @@ other compatible coding agents, distributed with Vercel's
 
 ### `feature-workflow`
 
-Completes every Git-repository change autonomously in a worktree, including
-verification, commits, pushes, merge, and cleanup.
+Completes new features autonomously in a worktree, including verification,
+commits, pushes, merge, and cleanup.
 
 ### `discover-workflows`
 
