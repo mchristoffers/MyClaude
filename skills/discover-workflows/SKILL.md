@@ -1,6 +1,7 @@
 ---
 name: discover-workflows
 description: Analyze one or more chat transcripts to find repeated, stable workflows worth turning into Agent Skills. Use when reviewing conversations for reusable processes, automation opportunities, or new skill ideas.
+disable-model-invocation: true
 ---
 
 # Workflow
