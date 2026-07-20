@@ -29,15 +29,26 @@ token is. Ask the user to export the three variables if any are unset.
    `image:` entries with named volumes and no published database ports.
 2. Discover UUIDs live: `GET /projects`, `/servers`, `/github-apps`.
 3. Create with `POST /applications/private-github-app` using `build_pack=dockercompose`,
-   `instant_deploy=false`, and the Compose path.
+   `git_branch=main`, `is_auto_deploy_enabled=true`, `instant_deploy=false`, and
+   the Compose path.
 4. Set variables with `PATCH /applications/{uuid}/envs/bulk`. Never print values.
 5. Set the domain on the public service only, then deploy with
    `POST /applications/{uuid}/start`.
 6. Verify HTTPS, container health, and volumes.
 
-To update, push to the production branch and let the webhook deploy. Roll back by
-reverting the commit or pinning the previous image tag; restore data only from a
-backup. Back up volumes before schema-affecting upgrades.
+## Deploy on push
+
+Coolify's GitHub App installs the webhook itself. With `is_auto_deploy_enabled:
+true` and `git_branch: main`, every push to `main` redeploys the stack from that
+commit. No GitHub Action, no registry, no build step.
+
+Versioning is the `image:` tag pinned in the Compose file, so upgrading is:
+bump the tag, commit, push to `main`. Coolify redeploys with the new image.
+Roll back by reverting that commit. Never use `:latest` — an unpinned tag makes
+both the deployed version and the rollback target ambiguous.
+
+Restore data only from a backup, and back up volumes before schema-affecting
+upgrades; an older image is not a safe rollback across a migration.
 
 Record the app UUID, domain, and Compose path in
 `/home/moritz/okf/infra/<app>-master1.md`.
