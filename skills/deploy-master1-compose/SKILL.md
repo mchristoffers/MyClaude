@@ -39,6 +39,10 @@ ssh master-1 'free -m; swapon --show'
 Require at least 2 GB of available memory or active swap. A Node build needs
 roughly 1.5 GB, so prefer a slim base image and a multi-stage Dockerfile.
 
+Order the Dockerfile so dependencies install before the source is copied
+(`COPY package*.json` and install, then `COPY . .`). The dependency layer then
+survives ordinary code pushes, and most deploys skip the expensive step.
+
 If there is not enough, either add swap or stop other stacks for the duration of
 the build — Moritz has approved stopping them while the remaining apps are
 migrated. Stop them deliberately with `POST /applications/{uuid}/stop` and
@@ -55,7 +59,7 @@ go down before stopping anything.
    `build_pack=dockercompose`, `git_branch=main`, `is_auto_deploy_enabled=true`,
    and the Compose path. Set `instant_deploy=false` so this first create waits
    for step 4; it does not affect later pushes.
-4. Set variables with `PATCH /applications/{uuid}/envs/bulk`. Never print values.
+4. Set variables with `PATCH /applications/{uuid}/envs/bulk`. 
 5. Set the domain on the public service only, then deploy with
    `POST /applications/{uuid}/start`.
 6. Verify HTTPS, container health, and volumes.
@@ -64,6 +68,11 @@ go down before stopping anything.
 
 Every push to `main` rebuilds and redeploys immediately. There is no release tag
 and no manual step. Roll back with `git revert`, which triggers the same rebuild.
+
+A normal deploy runs `docker compose build --pull` and reuses Docker's layer
+cache. Forcing a rebuild adds `--no-cache`, which rebuilds every layer and is the
+most likely deploy to exhaust memory. Never force a rebuild as a debugging
+reflex; do it only when a stale layer is the actual diagnosis.
 
 Back up volumes before schema-affecting upgrades; an older image is not a safe
 rollback across a migration, and restore data only from a backup.
