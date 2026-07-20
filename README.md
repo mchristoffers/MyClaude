@@ -15,15 +15,24 @@ commits, pushes, merge, and cleanup.
 
 Analyzes chats and suggests repeated, stable workflows as new Agent Skills.
 
+### `deploy-master1-compose`
+
+Deploys and maintains private-repository Docker Compose applications on the
+master-1 Coolify instance, from preflight through domain, deploy, rollback, and
+retirement.
+
 ## Install
 
-Install either skill globally for Claude Code and Codex:
+Install a skill globally for Claude Code and Codex:
 
 ```sh
 npx skills add mchristoffers/MyClaude --skill feature-workflow --global \
   --agent claude-code --agent codex
 
 npx skills add mchristoffers/MyClaude --skill discover-workflows --global \
+  --agent claude-code --agent codex
+
+npx skills add mchristoffers/MyClaude --skill deploy-master1-compose --global \
   --agent claude-code --agent codex
 ```
 
@@ -32,6 +41,7 @@ Update the installed skill after changes are published here:
 ```sh
 npx skills update feature-workflow --global --yes
 npx skills update discover-workflows --global --yes
+npx skills update deploy-master1-compose --global --yes
 ```
 
 List the skills in this repository without installing them:
@@ -42,7 +52,7 @@ npx skills add mchristoffers/MyClaude --list
 
 ## Activate the workflow persistently
 
-Copy the block from [`templates/feature-workflow.md`](templates/feature-workflow.md)
+Copy the block from [`AGENTS_SNIPPETS.md`](AGENTS_SNIPPETS.md)
 into any persistent instruction scope where the workflow should apply:
 
 - Repository-wide Codex instructions: `AGENTS.md`
@@ -64,7 +74,18 @@ Claude Code can consume the same file through a minimal `CLAUDE.md`:
 ## Layout
 
 ```text
+AGENTS_SNIPPETS.md
 skills/
+├── deploy-master1-compose/
+│   ├── SKILL.md
+│   ├── agents/
+│   │   └── openai.yaml
+│   ├── references/
+│   │   ├── lifecycle.md
+│   │   └── topology.md
+│   └── scripts/
+│       ├── master1-api.sh
+│       └── validate-compose.sh
 ├── discover-workflows/
 │   ├── SKILL.md
 │   └── agents/
@@ -73,6 +94,4 @@ skills/
     ├── SKILL.md
     └── agents/
         └── openai.yaml
-templates/
-└── feature-workflow.md
 ```
