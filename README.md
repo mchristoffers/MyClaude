@@ -18,8 +18,9 @@ Analyzes chats and suggests repeated, stable workflows as new Agent Skills.
 ### `deploy-master1-compose`
 
 Deploys and maintains private-repository Docker Compose applications on the
-master-1 Coolify instance, from preflight through domain, deploy, rollback, and
-retirement.
+master-1 Coolify instance. Calls the Coolify API directly and expects
+`COOLIFY_TOKEN`, `CF_ACCESS_CLIENT_ID`, and `CF_ACCESS_CLIENT_SECRET` in the
+environment.
 
 ## Install
 
@@ -78,14 +79,8 @@ AGENTS_SNIPPETS.md
 skills/
 ├── deploy-master1-compose/
 │   ├── SKILL.md
-│   ├── agents/
-│   │   └── openai.yaml
-│   ├── references/
-│   │   ├── lifecycle.md
-│   │   └── topology.md
-│   └── scripts/
-│       ├── master1-api.sh
-│       └── validate-compose.sh
+│   └── agents/
+│       └── openai.yaml
 ├── discover-workflows/
 │   ├── SKILL.md
 │   └── agents/

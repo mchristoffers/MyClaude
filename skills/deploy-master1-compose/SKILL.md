@@ -5,25 +5,39 @@ description: "Deploy and maintain production applications on master-1 Coolify fr
 
 # Workflow
 
-Git is the source of truth. Use build pack `dockercompose` through Coolify's
-GitHub App; never add a Dockerfile or GHCR pipeline.
+Target is master-1 Coolify at `https://coolify.mchristoffers.dev`, never the
+Homeserver instance at `coolify-home.mchristoffers.dev`.
 
-1. Read [references/topology.md](references/topology.md) before any API or server
-   action, and [references/lifecycle.md](references/lifecycle.md) before creating,
-   changing, rolling back, or deleting anything.
-2. Resolve repo, branch, Compose path, public service, internal port, domain,
-   variable names, and volume expectations. Ask only when a missing choice
-   materially changes production, especially the domain.
-3. Run the read-only preflight in `lifecycle.md`; resolve every error first.
-4. Create the project, application, variables, and domain in that order. Deploy
-   last, then verify HTTPS, health, and volume attachment.
-5. Maintain by changing the repo and letting the webhook deploy. Back up before
-   schema-affecting upgrades. Roll back through Git, not through data.
-6. Record durable topology in `/home/moritz/okf/infra/<app>-master1.md`, update
-   the parent `index.md`, and append a dated `log.md` entry.
-7. Report repo/branch/commit, Coolify UUID, domain, deploy and health result,
-   persistence state, and rollback point.
+## API access
 
-Treat references as known topology, not live state; verify UUIDs, versions, DNS,
-and repo access read-only before mutation. Never print secret values. Never route
-to Homeserver Coolify as a fallback, and never add either host to the other.
+Cloudflare Access fronts the API, so every call needs both headers:
+
+```sh
+curl -s -H "Authorization: Bearer $COOLIFY_TOKEN" \
+     -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+     -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+     -H "Accept: application/json" \
+     https://coolify.mchristoffers.dev/api/v1/teams
+```
+
+A 302 means the Access headers are missing or wrong; a 401 means the Coolify
+token is. Ask the user to export the three variables if any are unset.
+
+## Steps
+
+1. Confirm the repo is private, the branch exists, and the Compose file uses
+   `image:` entries with named volumes and no published database ports.
+2. Discover UUIDs live: `GET /projects`, `/servers`, `/github-apps`.
+3. Create with `POST /applications/private-github-app` using `build_pack=dockercompose`,
+   `instant_deploy=false`, and the Compose path.
+4. Set variables with `PATCH /applications/{uuid}/envs/bulk`. Never print values.
+5. Set the domain on the public service only, then deploy with
+   `POST /applications/{uuid}/start`.
+6. Verify HTTPS, container health, and volumes.
+
+To update, push to the production branch and let the webhook deploy. Roll back by
+reverting the commit or pinning the previous image tag; restore data only from a
+backup. Back up volumes before schema-affecting upgrades.
+
+Record the app UUID, domain, and Compose path in
+`/home/moritz/okf/infra/<app>-master1.md`.
