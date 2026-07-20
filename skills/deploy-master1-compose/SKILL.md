@@ -53,7 +53,8 @@ go down before stopping anything.
 2. Discover UUIDs live: `GET /projects`, `/servers`, `/github-apps`.
 3. Create with `POST /applications/private-github-app` using
    `build_pack=dockercompose`, `git_branch=main`, `is_auto_deploy_enabled=true`,
-   `instant_deploy=false`, and the Compose path.
+   and the Compose path. Set `instant_deploy=false` so this first create waits
+   for step 4; it does not affect later pushes.
 4. Set variables with `PATCH /applications/{uuid}/envs/bulk`. Never print values.
 5. Set the domain on the public service only, then deploy with
    `POST /applications/{uuid}/start`.
@@ -61,15 +62,11 @@ go down before stopping anything.
 
 ## Deploy and roll back
 
-Every push to `main` rebuilds and redeploys from that commit — the commit is the
-version. Pin base images and any upstream `image:` to explicit tags, never
-`:latest`, so a rebuild of an old commit still produces the same result.
+Every push to `main` rebuilds and redeploys immediately. There is no release tag
+and no manual step. Roll back with `git revert`, which triggers the same rebuild.
 
-Roll back by reverting the commit, which triggers a rebuild. That is slower than
-swapping a prebuilt image, so for an urgent outage prefer `git revert` of the
-smallest change over redeploying an old commit wholesale. Back up volumes before
-schema-affecting upgrades; an older image is not a safe rollback across a
-migration, and restore data only from a backup.
+Back up volumes before schema-affecting upgrades; an older image is not a safe
+rollback across a migration, and restore data only from a backup.
 
 Record the app UUID, domain, and Compose path in
 `/home/moritz/okf/infra/<app>-master1.md`.
