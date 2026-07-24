@@ -11,7 +11,7 @@ Always use a worktree for new features.
 - Inspect the repository and reuse or create a worktree.
 - Create an ignored `.agent-work/PROGRESS.md` and keep it current.
 - Create a feature branch using the repository's naming rules.
-- Plan with GPT-5.6 Sol (`openai/gpt-5.6-sol`).
+- Plan natively with the host's GPT-5.6 Sol (`gpt-5.6-sol`), never through OpenRouter.
 - Implement the plan only in the worktree with Kimi K2.7 Code
   (`moonshotai/kimi-k2.7-code`) through OpenRouter.
 - Run the required baseline and final tests; fix failures.
