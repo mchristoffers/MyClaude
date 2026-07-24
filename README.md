@@ -42,7 +42,7 @@ npx skills add mchristoffers/MyClaude --list
 
 ## Activate the workflow persistently
 
-Copy the block from [`templates/feature-workflow.md`](templates/feature-workflow.md)
+Copy the block from [`AGENTS_SNIPPETS.md`](AGENTS_SNIPPETS.md)
 into any persistent instruction scope where the workflow should apply:
 
 - Repository-wide Codex instructions: `AGENTS.md`
@@ -73,6 +73,5 @@ skills/
     ├── SKILL.md
     └── agents/
         └── openai.yaml
-templates/
-└── feature-workflow.md
+AGENTS_SNIPPETS.md
 ```
