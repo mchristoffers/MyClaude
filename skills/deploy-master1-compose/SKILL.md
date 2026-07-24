@@ -1,6 +1,6 @@
 ---
 name: deploy-master1-compose
-description: "Deploy and maintain production applications on master-1 Coolify from private GitHub repositories that ship a production Docker Compose file. Coolify clones, builds, and deploys on push to main with no GitHub Action and no image registry. Use for creating a master-1 application, connecting a private repo through the Coolify GitHub App, configuring domains, secrets and volumes, deploying, updating, rolling back, or retiring it. Never use for the separate Homeserver Coolify."
+description: "Deploy and maintain production and optional staging applications on master-1 Coolify from private GitHub repositories that ship a production Docker Compose file. Coolify clones, builds, and deploys on push to main/staging with no GitHub Action and no image registry. Use for creating a master-1 application, connecting a private repo through the Coolify GitHub App, configuring domains, secrets and volumes, deploying, updating, rolling back, or retiring it. Never use for the separate Homeserver Coolify."
 ---
 
 # Workflow
@@ -8,9 +8,12 @@ description: "Deploy and maintain production applications on master-1 Coolify fr
 Target is master-1 Coolify at `https://coolify.mchristoffers.dev`, never the
 Homeserver instance at `coolify-home.mchristoffers.dev`.
 
-Coolify owns the whole pipeline: its GitHub App installs the webhook, clones the
-private repo on push to `main`, builds any `build:` services on master-1, and
-brings the stack up. Never add a GitHub Action or push images to a registry.
+Coolify owns the pipeline: it clones the private repo on push, builds any
+`build:` services on master-1, and brings the stack up. Never add a GitHub
+Action or push images to a registry.
+
+Default production branch is `main`. Optionally add a separate staging app using
+branch `staging` and a staging domain like `stage.example.com`.
 
 ## API access
 
@@ -55,10 +58,12 @@ go down before stopping anything.
 1. Confirm the repo is private and the Compose file uses named volumes and
    publishes no database ports.
 2. Discover UUIDs live: `GET /projects`, `/servers`, `/github-apps`.
-3. Create with `POST /applications/private-github-app` using
+3. Create production with `POST /applications/private-github-app` using
    `build_pack=dockercompose`, `git_branch=main`, `is_auto_deploy_enabled=true`,
    and the Compose path. Set `instant_deploy=false` so env/domain setup happens
    before the first start; later `main` pushes still auto-deploy.
+   If staging is wanted, create a second app the same way with
+   `git_branch=staging` and its own domain/env/volumes.
 4. Set variables with `PATCH /applications/{uuid}/envs/bulk`.
 5. Set the domain on the public service only, then deploy with
    `POST /applications/{uuid}/start`.
@@ -66,8 +71,9 @@ go down before stopping anything.
 
 ## Deploy and roll back
 
-Every push to `main` rebuilds and redeploys immediately. There is no release tag
-and no manual step. Roll back with `git revert`, which triggers the same rebuild.
+Every push to the app branch (`main` for production, `staging` for staging)
+rebuilds and redeploys immediately. There is no release tag and no manual step.
+Roll back with `git revert`, which triggers the same rebuild.
 
 A normal deploy runs `docker compose build --pull` and reuses Docker's layer
 cache. Forcing a rebuild adds `--no-cache`, which rebuilds every layer and is the

@@ -1,4 +1,4 @@
 interface:
   display_name: "Deploy Master-1 Compose"
-  short_description: "Manage private Compose apps on master-1"
-  default_prompt: "Use $deploy-master1-compose to deploy and maintain this private-repository Docker Compose application on production master-1."
+  short_description: "Manage private production/staging Compose apps on master-1"
+  default_prompt: "Use $deploy-master1-compose to deploy and maintain this private-repository Docker Compose application on master-1, with optional staging."

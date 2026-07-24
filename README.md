@@ -18,7 +18,7 @@ Analyzes chats and suggests repeated, stable workflows as new Agent Skills.
 ### `deploy-master1-compose`
 
 Deploys and maintains private-repository Docker Compose applications on the
-master-1 Coolify instance. Calls the Coolify API directly and expects
+master-1 Coolify instance, with optional `staging` beside `main`. Calls the Coolify API directly and expects
 `COOLIFY_TOKEN`, `CF_ACCESS_CLIENT_ID`, and `CF_ACCESS_CLIENT_SECRET` in the
 environment.
 
