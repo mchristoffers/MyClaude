@@ -57,9 +57,9 @@ go down before stopping anything.
 2. Discover UUIDs live: `GET /projects`, `/servers`, `/github-apps`.
 3. Create with `POST /applications/private-github-app` using
    `build_pack=dockercompose`, `git_branch=main`, `is_auto_deploy_enabled=true`,
-   and the Compose path. Set `instant_deploy=false` so this first create waits
-   for step 4; it does not affect later pushes.
-4. Set variables with `PATCH /applications/{uuid}/envs/bulk`. 
+   and the Compose path. Set `instant_deploy=false` so env/domain setup happens
+   before the first start; later `main` pushes still auto-deploy.
+4. Set variables with `PATCH /applications/{uuid}/envs/bulk`.
 5. Set the domain on the public service only, then deploy with
    `POST /applications/{uuid}/start`.
 6. Verify HTTPS, container health, and volumes.
