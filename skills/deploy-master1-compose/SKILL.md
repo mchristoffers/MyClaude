@@ -12,8 +12,9 @@ Coolify owns the pipeline: it clones the private repo on push, builds any
 `build:` services on master-1, and brings the stack up. Never add a GitHub
 Action or push images to a registry.
 
-Default production branch is `main`. Optionally add a separate staging app using
-branch `staging` and a staging domain like `stage.example.com`.
+Default production branch is `main`. Optional staging is the same Coolify source
+setup as production, only with `git_branch=staging` and a staging domain. Do not
+create a separate staging webhook.
 
 ## API access
 
@@ -58,12 +59,15 @@ go down before stopping anything.
 1. Confirm the repo is private and the Compose file uses named volumes and
    publishes no database ports.
 2. Discover UUIDs live: `GET /projects`, `/servers`, `/github-apps`.
+   If no real private GitHub App source exists, report that before creating
+   apps; do not silently replace it with per-environment manual webhooks.
 3. Create production with `POST /applications/private-github-app` using
    `build_pack=dockercompose`, `git_branch=main`, `is_auto_deploy_enabled=true`,
    and the Compose path. Set `instant_deploy=false` so env/domain setup happens
    before the first start; later `main` pushes still auto-deploy.
    If staging is wanted, create a second app the same way with
-   `git_branch=staging` and its own domain/env/volumes.
+   `git_branch=staging` and its own domain/env/volumes. Use the same GitHub App
+   source; only the branch differs.
 4. Set variables with `PATCH /applications/{uuid}/envs/bulk`.
 5. Set the domain on the public service only, then deploy with
    `POST /applications/{uuid}/start`.
