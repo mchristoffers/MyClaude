@@ -23,15 +23,31 @@ pipeline, or production branch.
 
 ## Domains
 
-- Bind only exact hostnames in Coolify FQDNs, e.g. `https://example.com` or
+- Bind only exact hostnames, e.g. `https://example.com` or
   `https://stage.example.com`; do not treat a base domain as owning every
   subdomain.
+- For Docker Compose apps, set service domains through
+  `docker_compose_domains`, e.g.
+  `[{ "name": "app", "domain": "https://example.com" }]`; do not use the
+  top-level `domains` field.
 - Other subdomains of the same zone may point to other Coolify apps.
 - DNS for each hostname must point to master-1 in Cloudflare; Coolify only owns
   proxy routing after DNS reaches the server.
 - Before changing a hostname, check no other Coolify app already has that FQDN.
-- After binding, verify both the stored Coolify FQDN and the running Traefik
-  labels/HTTPS route. Stale `sslip.io` FQDNs in Coolify should be corrected.
+- After binding, verify stored `fqdn`, `docker_compose_domains`, and the running
+  Traefik labels/HTTPS route. Stale `sslip.io` FQDNs in Coolify should be
+  corrected through the Coolify API.
+
+Compose domain update:
+
+```sh
+curl -sS -X PATCH "$COOLIFY_URL/api/v1/applications/$APP_UUID" \
+  -H "Authorization: Bearer $COOLIFY_TOKEN" \
+  -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
+  -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  --data '{"docker_compose_domains":[{"name":"app","domain":"https://example.com"}]}'
+```
 
 ## Access
 
