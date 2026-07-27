@@ -8,9 +8,9 @@ description: "Deploy and maintain production and optional staging applications o
 Target is master-1 Coolify at `https://coolify.mchristoffers.dev`, never the
 Homeserver instance at `coolify-home.mchristoffers.dev`.
 
-Coolify owns the pipeline: it clones the private repo on push, builds any
-`build:` services on master-1, and brings the stack up. Never add a GitHub
-Action or push images to a registry.
+Coolify owns the pipeline through a private GitHub App source: it clones the
+private repo on push, builds any `build:` services on master-1, and brings the
+stack up. Never add a GitHub Action or push images to a registry.
 
 Default production branch is `main`. Optional staging is the same Coolify source
 setup as production, only with `git_branch=staging` and a staging domain. Do not
@@ -59,8 +59,9 @@ go down before stopping anything.
 1. Confirm the repo is private and the Compose file uses named volumes and
    publishes no database ports.
 2. Discover UUIDs live: `GET /projects`, `/servers`, `/github-apps`.
-   If no real private GitHub App source exists, report that before creating
-   apps; do not silently replace it with per-environment manual webhooks.
+   A real private GitHub App source is required. If it is missing or incomplete,
+   set it up first; do not replace this workflow with deploy-key apps or manual
+   webhooks unless Moritz explicitly asks for a temporary fallback.
 3. Create production with `POST /applications/private-github-app` using
    `build_pack=dockercompose`, `git_branch=main`, `is_auto_deploy_enabled=true`,
    and the Compose path. Set `instant_deploy=false` so env/domain setup happens
