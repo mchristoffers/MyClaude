@@ -23,16 +23,20 @@ pipeline, or production branch.
 
 ## Domains
 
-- Bind only exact hostnames, e.g. `https://example.com` or
+- Prefer DNS shape: apex `example.com` and wildcard `*.example.com` point to
+  master-1; only explicit exceptions (for example Coolify tunnels or external
+  services) get their own DNS records.
+- In Coolify, still bind exact hostnames per app, e.g. `https://example.com` or
   `https://stage.example.com`; do not treat a base domain as owning every
   subdomain.
 - For Docker Compose apps, set service domains through
   `docker_compose_domains`, e.g.
   `[{ "name": "app", "domain": "https://example.com" }]`; do not use the
   top-level `domains` field.
-- Other subdomains of the same zone may point to other Coolify apps.
-- DNS for each hostname must point to master-1 in Cloudflare; Coolify only owns
-  proxy routing after DNS reaches the server.
+- Other subdomains of the same zone may point to other Coolify apps because
+  Coolify routes by Host header after wildcard DNS reaches master-1.
+- Keep mail/DKIM/DMARC DNS separate. Do not delete tunnel exceptions such as
+  `coolify.example.com` merely because wildcard DNS exists.
 - Before changing a hostname, check no other Coolify app already has that FQDN.
 - After binding, verify stored `fqdn`, `docker_compose_domains`, and the running
   Traefik labels/HTTPS route. Stale `sslip.io` FQDNs in Coolify should be

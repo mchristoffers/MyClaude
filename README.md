@@ -22,7 +22,7 @@ master-1 Coolify instance, with optional `staging` beside `main`. Coolify clones
 with a deploy key and builds on master-1; GitHub Actions only run checks and
 send signed push payloads through Cloudflare Access to Coolify's manual GitHub
 webhook. Domain bindings are exact hostnames; other subdomains may belong to
-other apps.
+other apps through wildcard DNS on the zone.
 
 ## Install
 
