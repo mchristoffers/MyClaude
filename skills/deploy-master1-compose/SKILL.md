@@ -17,12 +17,21 @@ pipeline, or production branch.
 - Branches: `main` for production, optional `staging` for stage.
 - Create one Coolify Compose app per branch, using the private deploy key source
   and the repo's production Compose file.
-- Set each app FQDN to the exact hostname (`https://example.com`,
-  `https://stage.example.com`). Other subdomains may point to other apps.
-- DNS for each hostname must point to master-1. Coolify does not manage the zone.
 - Remove repo-level GitHub webhooks; Actions are the only trigger.
 - Before first build: `ssh master-1 'free -m; swapon --show'`. Add swap or stop
   non-critical apps if memory is tight; never let OOM choose.
+
+## Domains
+
+- Bind only exact hostnames in Coolify FQDNs, e.g. `https://example.com` or
+  `https://stage.example.com`; do not treat a base domain as owning every
+  subdomain.
+- Other subdomains of the same zone may point to other Coolify apps.
+- DNS for each hostname must point to master-1 in Cloudflare; Coolify only owns
+  proxy routing after DNS reaches the server.
+- Before changing a hostname, check no other Coolify app already has that FQDN.
+- After binding, verify both the stored Coolify FQDN and the running Traefik
+  labels/HTTPS route. Stale `sslip.io` FQDNs in Coolify should be corrected.
 
 ## Access
 
