@@ -9,4 +9,7 @@ reinstall the changed skill globally for Codex and Claude Code:
 npx skills add . --skill <skill-name> --global --agent codex --agent claude-code --copy --yes
 ```
 
+If `/home/moritz/.codex/skills/<skill-name>` exists from an older Codex install,
+replace it with `/home/moritz/.agents/skills/<skill-name>` after reinstalling.
+
 Installed skills do not auto-update from live edits on main.
