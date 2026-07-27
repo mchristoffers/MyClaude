@@ -33,6 +33,8 @@ Do not hardcode stale assumptions.
 - Coolify still binds exact hostnames per app.
 - Docker Compose app domains go in `docker_compose_domains`, not top-level
   `domains`.
+- If the web service joins multiple networks, add
+  `traefik.docker.network=coolify`.
 - Check FQDN conflicts before binding.
 - Verify stored `fqdn`, `docker_compose_domains`, Traefik labels, and HTTPS.
 
