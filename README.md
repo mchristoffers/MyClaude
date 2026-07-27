@@ -18,10 +18,10 @@ Analyzes chats and suggests repeated, stable workflows as new Agent Skills.
 ### `deploy-master1-compose`
 
 Deploys and maintains private-repository Docker Compose applications on the
-master-1 Coolify instance, with optional `staging` beside `main`. The intended
-source is a private GitHub App; Stage uses the same source as production, only a different branch. Calls the Coolify API directly and expects
-`COOLIFY_TOKEN`, `CF_ACCESS_CLIENT_ID`, and `CF_ACCESS_CLIENT_SECRET` in the
-environment.
+master-1 Coolify instance, with optional `staging` beside `main`. Coolify clones
+with a deploy key and builds on master-1; GitHub Actions only run checks and
+send signed push payloads through Cloudflare Access to Coolify's manual GitHub
+webhook.
 
 ## Install
 
