@@ -21,6 +21,8 @@ Do not hardcode stale assumptions.
 - One Coolify Docker Compose app per branch.
 - Use repo-scoped read-only deploy key/SSH access.
 - Use the repo's production Compose file unless the repo proves otherwise.
+- Put app-owned DBs, caches, workers, cron, and volumes in Compose. Stage and
+  production must not share volumes.
 - Remove repo-level GitHub webhooks; Actions are the only trigger.
 - Before first build, check master-1 memory/swap. Do not let OOM decide.
 
