@@ -1,4 +1,4 @@
 interface:
   display_name: "Deploy Master-1 Compose"
-  short_description: "Manage master-1 Compose apps, domains, and Actions deploys"
-  default_prompt: "Use $deploy-master1-compose to deploy and maintain this private-repository Docker Compose application on master-1, including exact domain bindings, optional staging, and GitHub Actions triggers."
+  short_description: "Operate master-1 Coolify Compose apps"
+  default_prompt: "Use $deploy-master1-compose for this private GitHub Compose app on master-1: setup, domains, staging/prod, Actions trigger, deploy, or rollback."

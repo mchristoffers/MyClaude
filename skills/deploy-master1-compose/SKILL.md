@@ -1,128 +1,64 @@
 ---
 name: deploy-master1-compose
-description: "Deploy and maintain production and optional staging applications on master-1 Coolify from private GitHub repositories with a Docker Compose file. Coolify clones by deploy key and builds on master-1; GitHub Actions only run checks and send signed push payloads through Cloudflare Access to Coolify's manual GitHub webhook. Use for domains, secrets, volumes, deploys, rollbacks, staging, and retiring apps on master-1. Never use for the separate Homeserver Coolify."
+description: "Deploy and operate private GitHub Docker Compose apps on Moritz's master-1 Coolify: app setup, staging/prod branches, domains, secrets, volumes, deploys, rollbacks, migrations, and retiring apps. Coolify clones/builds/deploys; GitHub Actions only test and send signed manual webhook payloads through Cloudflare Access. Never use for Homeserver Coolify."
 ---
 
 # Workflow
 
-Target: master-1 Coolify at `https://coolify.mchristoffers.dev`, never
+Use master-1 Coolify: `https://coolify.mchristoffers.dev`. Never use
 `coolify-home.mchristoffers.dev`.
 
-Coolify owns runtime, domains, env, volumes, cloning, build, and deploy. GitHub
-Actions only trigger deploys. No GitHub App, GHCR, registry, image-push
-pipeline, or production branch.
+Coolify owns runtime, domains, env, volumes, cloning, build, and deploy. Actions
+only run checks and trigger deploys. No GitHub App, GHCR, registry/image-push
+pipeline, or `production` branch.
+
+Discover repo/app details live from OKF, GitHub, Coolify, DNS, and the repo.
+Do not hardcode stale assumptions.
 
 ## Setup
 
-- Branches: `main` for production, optional `staging` for stage.
-- Create one Coolify Compose app per branch, using the private deploy key source
-  and the repo's production Compose file.
+- Branches: `main` = production, optional `staging` = stage.
+- One Coolify Docker Compose app per branch.
+- Use repo-scoped read-only deploy key/SSH access.
+- Use the repo's production Compose file unless the repo proves otherwise.
 - Remove repo-level GitHub webhooks; Actions are the only trigger.
-- Before first build: `ssh master-1 'free -m; swapon --show'`. Add swap or stop
-  non-critical apps if memory is tight; never let OOM choose.
+- Before first build, check master-1 memory/swap. Do not let OOM decide.
 
 ## Domains
 
-- Prefer DNS shape: apex `example.com` and wildcard `*.example.com` point to
-  master-1; only explicit exceptions (for example Coolify tunnels or external
-  services) get their own DNS records.
-- In Coolify, still bind exact hostnames per app, e.g. `https://example.com` or
-  `https://stage.example.com`; do not treat a base domain as owning every
-  subdomain.
-- For Docker Compose apps, set service domains through
-  `docker_compose_domains`, e.g.
-  `[{ "name": "app", "domain": "https://example.com" }]`; do not use the
-  top-level `domains` field.
-- Other subdomains of the same zone may point to other Coolify apps because
-  Coolify routes by Host header after wildcard DNS reaches master-1.
-- Keep mail/DKIM/DMARC DNS separate. Do not delete tunnel exceptions such as
-  `coolify.example.com` merely because wildcard DNS exists.
-- Before changing a hostname, check no other Coolify app already has that FQDN.
-- After binding, verify stored `fqdn`, `docker_compose_domains`, and the running
-  Traefik labels/HTTPS route. Stale `sslip.io` FQDNs in Coolify should be
-  corrected through the Coolify API.
-
-Compose domain update:
-
-```sh
-curl -sS -X PATCH "$COOLIFY_URL/api/v1/applications/$APP_UUID" \
-  -H "Authorization: Bearer $COOLIFY_TOKEN" \
-  -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
-  -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
-  -H "Content-Type: application/json" \
-  --data '{"docker_compose_domains":[{"name":"app","domain":"https://example.com"}]}'
-```
+- DNS preference: apex + wildcard point to master-1.
+- Keep explicit DNS records only for tunnel/external/mail exceptions.
+- Coolify still binds exact hostnames per app.
+- Docker Compose app domains go in `docker_compose_domains`, not top-level
+  `domains`.
+- Check FQDN conflicts before binding.
+- Verify stored `fqdn`, `docker_compose_domains`, Traefik labels, and HTTPS.
 
 ## Access
 
-Coolify is behind Cloudflare Access:
-
-```sh
-. ~/.config/master1-coolify.env
-curl -s -H "Authorization: Bearer $COOLIFY_TOKEN" \
-  -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" \
-  -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
-  "$COOLIFY_URL/api/v1/teams"
-```
-
-302 = missing Access headers. 401 = bad Coolify token.
+Load `/home/moritz/.config/master1-coolify.env`. Send both Coolify auth and
+Cloudflare Access headers. 302 means missing Access headers; 401 means bad
+Coolify token.
 
 ## Actions trigger
 
-GitHub secrets:
-
-- `COOLIFY_GITHUB_WEBHOOK` =
-  `https://coolify.mchristoffers.dev/webhooks/source/github/events/manual`
+- `COOLIFY_GITHUB_WEBHOOK`
 - `COOLIFY_GITHUB_SECRET_PRODUCTION`
-- `COOLIFY_GITHUB_SECRET_STAGING` if staging exists
+- `COOLIFY_GITHUB_SECRET_STAGING` for stage
 - `CF_ACCESS_CLIENT_ID`
 - `CF_ACCESS_CLIENT_SECRET`
 
-Read app webhook secrets through Coolify's app model, not raw DB columns
-(database values are encrypted). Each branch gets one small workflow:
+Get app webhook secrets through Coolify's app model, not raw DB columns.
 
-```yaml
-name: Deploy production
-on: { push: { branches: [main] }, workflow_dispatch: {} }
-concurrency: { group: deploy-production, cancel-in-progress: true }
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - run: npm ci
-      - run: npm test
-      - name: Trigger Coolify
-        env:
-          WEBHOOK_SECRET: ${{ secrets.COOLIFY_GITHUB_SECRET_PRODUCTION }}
-        run: |
-          sig="$(python3 - <<'PY'
-          import hashlib,hmac,os; from pathlib import Path
-          print("sha256="+hmac.new(os.environ["WEBHOOK_SECRET"].encode(),Path(os.environ["GITHUB_EVENT_PATH"]).read_bytes(),hashlib.sha256).hexdigest())
-          PY
-          )"
-          out="$(mktemp)"
-          curl --fail-with-body -X POST "${{ secrets.COOLIFY_GITHUB_WEBHOOK }}" \
-            -H "Content-Type: application/json" -H "X-GitHub-Event: push" \
-            -H "X-GitHub-Delivery: ${{ github.run_id }}-${{ github.run_attempt }}" \
-            -H "X-Hub-Signature-256: $sig" \
-            -H "CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}" \
-            -H "CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
-            --data-binary "@$GITHUB_EVENT_PATH" --output "$out"
-          cat "$out"; ! grep -q '"status":"failed"' "$out"
-```
-
-For staging, change name, branch, concurrency group, and secret to
-`COOLIFY_GITHUB_SECRET_STAGING`.
+Use one workflow per branch: checkout, setup, install, test, HMAC-sign
+`GITHUB_EVENT_PATH`, POST it to Coolify's manual GitHub webhook with GitHub event
+headers and Cloudflare Access headers, and fail unless Coolify queues deploy.
 
 ## Operate
 
-Push to `main`/`staging`. Action must return `Deployment queued.`; Coolify must
-build an image tagged with that commit and swap the app. Roll back with
-`git revert` on the same branch. Avoid force rebuilds unless stale cache is the
-actual diagnosis.
+Push to `main`/`staging`. Verify Action output, Coolify build, image tag =
+commit, and live URL. Roll back with `git revert`. Avoid force rebuilds unless
+stale cache is the diagnosis.
 
 Record app UUIDs, domains, Compose path, secrets, and test results in
 `/home/moritz/okf/infra/<app>-master1.md`.
