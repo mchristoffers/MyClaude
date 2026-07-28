@@ -164,10 +164,13 @@ Queueing is not success. Every workflow must:
 2. Poll `GET /api/v1/deployments/{uuid}` (Bearer token + Access headers) until
    the status leaves `queued`/`in_progress`. Derive the base URL by cutting the
    webhook secret at `/webhooks/` so no second secret can drift.
-3. Fail on `failed`/`error`/`cancelled` or a timeout (~25 min), printing the tail
-   of the deployment `logs` — it is a JSON string of `{output: …}` entries.
-   Abort after a handful of consecutive request failures too, so a blocked or
-   unreachable API surfaces instead of polling until the timeout.
+3. Treat `finished` as success, `queued`/`in_progress` as keep-waiting, and
+   **everything else as failure** — Coolify's cancel status is
+   `cancelled-by-user`, so a positive list of failure names silently polls until
+   the timeout. Print the tail of the deployment `logs` — a JSON string of
+   `{output: …}` entries. Fail on a timeout (~25 min), and abort after a handful
+   of consecutive request failures too, so a blocked or unreachable API surfaces
+   instead of polling on.
 4. Finish by polling the live URL until it answers 200, with retries — the stack
    is recreated on every deploy and needs a moment. Behind Cloudflare Access,
    send the service-token headers or the check only ever sees a 302.
