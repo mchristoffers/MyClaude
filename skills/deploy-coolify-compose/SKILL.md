@@ -14,12 +14,32 @@ Do not hardcode stale assumptions.
 
 ## Ask up front
 
-Per app, before touching anything:
+Per app, before touching anything, get an **explicit answer from Moritz** to each:
 
 - Target: **master-1** or **Homeserver**.
 - Exact domain.
 - Exposure: **public**, **behind Cloudflare Access**, or **internal only**.
 - Ready-made image or the repo's own Dockerfile build.
+- Data store: the app's built-in/SQLite mode or a real DB service in the Compose
+  file — it decides backup shape and RAM, and it is a one-way door once there is
+  data.
+
+These are Moritz's calls, not judgment calls to absorb. Never settle one by
+inference — not from the app's nature, not from what a comparable app got, not
+from the target's resources, not from an OKF note. Recommend by all means, but
+the recommendation is not the answer.
+
+**A refused or unanswered question is not consent to proceed on a default.**
+If the question tool is denied or the answer does not come, ask again in plain
+text and wait. What you may do meanwhile is only the part that every possible
+answer shares — read the repo, check resources, list free ports. Do not create
+the repo, the Coolify app, DNS, or ingress on an assumed answer; unwinding those
+costs more than waiting. Announcing an assumption is not the same as getting an
+answer, and "I'll say what I picked and he can correct me" pushes the work of
+catching a wrong guess onto Moritz.
+
+Record every answer verbatim in the OKF page, so the next change starts from the
+decision rather than re-deriving it.
 
 ## Target
 
@@ -110,8 +130,10 @@ password-protected ones.
 ## Exposure
 
 Always Moritz's call — ask every time, never infer it from the app, and record
-the answer. The tunnel and Traefik only carry traffic; they authenticate
-nothing, so reaching an app is never the same as being allowed into it.
+the answer; if the question goes unanswered, wait for it (see **Ask up front**)
+instead of falling back to a default. The tunnel and Traefik only carry traffic;
+they authenticate nothing, so reaching an app is never the same as being allowed
+into it.
 
 **Public** — the app's own login is the only gate. Right for apps with real
 account management (Nextcloud, AppFlowy). Confirm the app actually has login
