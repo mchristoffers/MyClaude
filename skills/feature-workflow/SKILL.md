@@ -7,7 +7,8 @@ description: "Use only when implementing a new product or code feature in a Git 
 
 Always use a worktree for new features.
 
-- Ask once upfront which planner and implementer to use, offering the defaults below.
+- Ask once upfront which planner and implementer to use, offering only the
+  options below that belong to the running host agent.
 - Commit every existing change to the default branch with a suitable message and push before starting.
 - Inspect the repository and reuse or create a worktree.
 - Create an ignored `.agent-work/PROGRESS.md` and keep it current.
@@ -24,13 +25,14 @@ approval, overwrite user changes, or force destructive Git operations.
 
 # Planner and implementer
 
-Defaults:
+Plan in a subagent of the running host agent's own CLI, never another agent's
+CLI, and only offer that host's own models. Defaults:
 
-- Plan in a subagent on the host agent's own model at its highest reasoning
-  effort:
-  - Claude Code: Opus 5 subagent
-  - Codex: `codex exec -m gpt-5.6-sol -c model_reasoning_effort="xhigh"`
-- Implement with the Kimi Code CLI: `kimi --quiet -w <worktree> -p '<plan>'`
+- Claude Code: subagent on Opus 5 — never offer Codex or GPT models here.
+- Codex: `codex exec -m gpt-5.6-sol -c model_reasoning_effort="xhigh"` — never
+  offer Claude models here.
+
+Implement with the Kimi Code CLI: `kimi --quiet -w <worktree> -p '<plan>'`
 
 # Kimi Code CLI
 
