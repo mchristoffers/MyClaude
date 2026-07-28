@@ -209,13 +209,38 @@ a later `cat`, so use `|| { cat "$response"; exit 1; }`.
 ## Mail
 
 Apps that send mail reuse **one** shared Zoho SMTP account — never a new app
-password per app. Values in `/home/moritz/okf/infra/zoho-api.md`: host
-`smtp.zoho.eu`, port 465 (`wrapper`) or 587 (STARTTLS), user is the real mailbox
-`moritz@mchristoffers.dev`, sender an alias such as `noreply@`.
+password per app. Wire it up while setting the app up, not after the first
+"password forgotten" fails.
 
-Name the Compose variables neutrally (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`,
-`SMTP_FROM`, `SMTP_TLS_KIND`) and map them to the app's own names inside the
-service, so the same block copies across apps.
+| Variable | Value |
+| --- | --- |
+| `SMTP_HOST` | `smtp.zoho.eu` |
+| `SMTP_PORT` | `587` (STARTTLS) or `465` (SSL/wrapper) — both reachable from either host |
+| `SMTP_USER` | `moritz@mchristoffers.dev` — always the real mailbox, never an alias |
+| `SMTP_PASSWORD` | `***REMOVED-SECRET***` — Zoho app password `homelab-smtp`, shared by every app |
+| `SMTP_FROM` | `noreply@mchristoffers.dev` (aliases: `admin@`, `contact@`, `hello@`, `claude@`, …) |
+| `SMTP_TLS_KIND` | `TLS` for 587, `SSL` for 465 |
+
+Aliases all land in `moritz@`'s inbox. Do not mint a second app password; Zoho
+has no API for it, so it would cost a browser session and split the secret.
+Full background: `/home/moritz/okf/infra/zoho-api.md`.
+
+Keep those neutral names in Compose and map them to the app's own variables
+inside the service, so the same block copies across apps unchanged:
+
+```yaml
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM:-}          # <- app's own name on the left
+      SMTP_AUTH_STRATEGY: ${SMTP_TLS_KIND:-TLS}
+```
+
+Some apps read `SMTP_*` **only on first install** and ignore it afterwards
+(Nextcloud is one — it needed `occ config:system:set` on the running instance).
+Check whether the app persists mail config in its data volume before assuming an
+env change took effect.
 
 Watch for silent no-op mailers: GoTrue without `GOTRUE_SMTP_*` logs `Noop mail
 client being used`, still answers 200 and drops the mail. Always verify with a
