@@ -1,6 +1,6 @@
 ---
 name: deploy-coolify-compose
-description: "Deploy and operate private GitHub Docker Compose apps on Moritz's Coolify instances — master-1 (Hetzner VPS, production) or Homeserver (homelab): app setup, staging/prod branches, domains, secrets, volumes, deploys, rollbacks, migrations, and retiring apps. Coolify clones/builds/deploys; GitHub Actions only test and send signed manual webhook payloads through Cloudflare Access."
+description: "Deploy and operate private GitHub Docker Compose apps on Moritz's Coolify instances — master-1 (Hetzner VPS, production) or Homeserver (homelab): app setup, staging/prod branches, domains, exposure (public, Cloudflare Access, or internal), secrets, volumes, deploys, rollbacks, migrations, and retiring apps. Coolify clones/builds/deploys; GitHub Actions test, send signed manual webhook payloads through Cloudflare Access, then wait for the deployment result and fail on a broken build."
 ---
 
 # Workflow
@@ -18,6 +18,7 @@ Per app, before touching anything:
 
 - Target: **master-1** or **Homeserver**.
 - Exact domain.
+- Exposure: **public**, **behind Cloudflare Access**, or **internal only**.
 - Ready-made image or the repo's own Dockerfile build.
 
 ## Target
@@ -55,6 +56,15 @@ Compose either pulls a ready-made image or builds the repo's own Dockerfile.
   deploy key already registered on another repo.
 - Remove repo-level GitHub webhooks; Actions are the only trigger.
 
+**Never bind-mount a config file from the repo.** Coolify writes only
+`docker-compose.yaml` and `.env` into `/data/coolify/applications/<uuid>/` — the
+working tree is not materialised there. A relative `./conf/app.conf` mount is
+rewritten to an absolute host path and registered in `local_file_volumes` with
+`is_directory=true` and empty content, so Docker creates a *directory* and the
+container dies with `not a directory`. Ship config by baking it into a small
+image (`build:` context with a `COPY`, plus a syntax check in the Dockerfile).
+Pasting it into Coolify's file-mount UI instead splits the source of truth.
+
 ## Domains
 
 Check FQDN conflicts before binding. Verify HTTPS on the real hostname when done.
@@ -64,26 +74,74 @@ only for tunnel/external/mail exceptions. Coolify binds exact hostnames per app:
 put Compose app domains in `docker_compose_domains`, not top-level `domains`.
 If the web service joins multiple networks, add `traefik.docker.network=coolify`.
 
-**Homeserver** — no Traefik, so the web service publishes a host port and the
-homelab cloudflared tunnel `758ee962-…` fronts it: add an ingress entry to
-`~/git/mchristoffers/homelab/cloudflared-config.yml` pointing at
-`http://192.168.178.112:<port>`, then `docker compose restart tunnel` there.
-Add an explicit proxied CNAME to `<tunnel-id>.cfargotunnel.com` — it overrides
-the wildcard that points at master-1. Leave the Coolify `fqdn` and
-`docker_compose_domains` empty. Set `TRUSTED_PROXIES` plus the app's
-overwrite-host/protocol settings so it emits correct HTTPS URLs.
+**Homeserver** — the house has no public IP, so every published app goes through
+the tunnel. That part is not a choice; only the exposure below is.
+
+**One tunnel serves the whole host** — the homelab cloudflared tunnel
+`758ee962-…`, container `homelab-tunnel-1`, already carrying every homelab
+hostname. Never create a per-app tunnel; it would only add a container and
+credentials for the same path.
+
+There is no Traefik, so the web service publishes a host port and the tunnel
+fronts it. Per app that is exactly three things:
+
+1. A free host port — list the existing `service:` lines before picking one.
+2. An ingress entry in `~/git/mchristoffers/homelab/cloudflared-config.yml`
+   pointing at `http://192.168.178.112:<port>`, added **above** the trailing
+   `http_status:404` catch-all, then `docker compose restart tunnel` there.
+3. An explicit proxied CNAME to `<tunnel-id>.cfargotunnel.com` — it overrides
+   the wildcard that points at master-1.
+
+Leave the Coolify `fqdn` and `docker_compose_domains` empty. Set
+`TRUSTED_PROXIES` plus the app's overwrite-host/protocol settings so it emits
+correct HTTPS URLs. Cloudflare terminates TLS, so honour `X-Forwarded-Proto`
+rather than the scheme the app sees, or it emits `http://` links.
+
+Coolify's API **refuses** to clear `fqdn` on a `dockercompose` app ("This field
+is not allowed", pointing at `docker_compose_domains`). Clear the auto-assigned
+`*.sslip.io` value with `UPDATE applications SET fqdn = NULL WHERE uuid = '…'`
+in `coolify-db`.
 
 **Homeserver name collisions** — the shared `coolify` network carries the
 aliases `redis`, `postgres`, and `soketi` from Coolify's own containers. Prefix
 backing services (`<app>-db`, `<app>-redis`) or they resolve to Coolify's
 password-protected ones.
 
-## Access
+## Exposure
+
+Always Moritz's call — ask every time, never infer it from the app, and record
+the answer. The tunnel and Traefik only carry traffic; they authenticate
+nothing, so reaching an app is never the same as being allowed into it.
+
+**Public** — the app's own login is the only gate. Right for apps with real
+account management (Nextcloud, AppFlowy). Confirm the app actually has login
+enforced and self-registration closed before choosing it.
+
+**Behind Cloudflare Access** — Zero Trust team `sadfroger.cloudflareaccess.com`
+fronts the hostname, as with `coolify-home`. Right for dashboards and admin
+panels with weak, shared, or absent auth. Two policies: one identity policy for
+Moritz's email, plus a non-identity **service token** policy for anything
+automated. Machine callers then send `CF-Access-Client-Id/Secret`.
+
+Access breaks every non-browser client — native mobile apps, desktop sync
+clients, WebDAV, CLI tools — because they cannot complete the login redirect and
+just see a 302. If the app has such clients, either stay public or accept that
+only the browser works. Say this out loud when Access is picked.
+
+**Internal only** — no tunnel ingress, no public hostname; reachable over LAN or
+Tailscale. Cheapest and safest when nothing off-network needs it.
+
+## API access
 
 Load the target's env file. Send Coolify auth, plus Cloudflare Access headers
 over a public URL. 302 means missing Access headers; 401 means bad Coolify
 token. On the Homeserver prefer the local URL — no Access needed. Sanctum tokens
 contain a `|`, so keep them double-quoted.
+
+**Use curl, never Python's urllib, against a Cloudflare-fronted URL.** Cloudflare
+rejects its user agent with `error code: 1010` (HTTP 403) even when the Access
+headers are correct — a retry loop then spins forever instead of failing. This
+only bites over the public hostname; local calls are unaffected.
 
 ## Actions trigger
 
@@ -92,18 +150,62 @@ contain a `|`, so keep them double-quoted.
 - `COOLIFY_GITHUB_SECRET_STAGING` for stage
 - `CF_ACCESS_CLIENT_ID`
 - `CF_ACCESS_CLIENT_SECRET`
+- `COOLIFY_API_TOKEN` — to poll the deployment result
 
 Get app webhook secrets through Coolify's app model, not raw DB columns.
 
-Use one workflow per branch: checkout, setup, install, test, HMAC-sign
-`GITHUB_EVENT_PATH`, POST it to Coolify's manual GitHub webhook with GitHub event
-headers and Cloudflare Access headers, and fail unless Coolify queues deploy.
+Use one workflow per branch: checkout, setup, install, test, HMAC-sign the
+payload, POST it to Coolify's manual GitHub webhook with GitHub event headers and
+Cloudflare Access headers, then **wait for the deployment to actually finish**.
+
+Queueing is not success. Every workflow must:
+
+1. Read `deployment_uuid` from the webhook response and fail if it is absent.
+2. Poll `GET /api/v1/deployments/{uuid}` (Bearer token + Access headers) until
+   the status leaves `queued`/`in_progress`. Derive the base URL by cutting the
+   webhook secret at `/webhooks/` so no second secret can drift.
+3. Fail on `failed`/`error`/`cancelled` or a timeout (~25 min), printing the tail
+   of the deployment `logs` — it is a JSON string of `{output: …}` entries.
+   Abort after a handful of consecutive request failures too, so a blocked or
+   unreachable API surfaces instead of polling until the timeout.
+4. Finish by polling the live URL until it answers 200, with retries — the stack
+   is recreated on every deploy and needs a moment. Behind Cloudflare Access,
+   send the service-token headers or the check only ever sees a 302.
+
+**`workflow_dispatch` needs a synthetic payload.** Coolify's handler iterates
+`commits[]`; a dispatch event has none and Coolify answers 500
+(`foreach() argument must be of type array|object, null given`). Forward real
+pushes byte for byte, and for other events build a minimal push-shaped payload
+with `ref`, `after`, `repository.full_name` and one `commits[]` entry.
+
+Also surface the response body when curl fails — `shell: bash -e` aborts before
+a later `cat`, so use `|| { cat "$response"; exit 1; }`.
+
+## Mail
+
+Apps that send mail reuse **one** shared Zoho SMTP account — never a new app
+password per app. Values in `/home/moritz/okf/infra/zoho-api.md`: host
+`smtp.zoho.eu`, port 465 (`wrapper`) or 587 (STARTTLS), user is the real mailbox
+`moritz@mchristoffers.dev`, sender an alias such as `noreply@`.
+
+Name the Compose variables neutrally (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`,
+`SMTP_FROM`, `SMTP_TLS_KIND`) and map them to the app's own names inside the
+service, so the same block copies across apps.
+
+Watch for silent no-op mailers: GoTrue without `GOTRUE_SMTP_*` logs `Noop mail
+client being used`, still answers 200 and drops the mail. Always verify with a
+real message. Aliases and reading verification mails are automatable via
+`~/bin/zoho-api`; app passwords are browser-only.
 
 ## Operate
 
-Push to `main`/`staging`. Verify Action output, Coolify build, image tag =
-commit, and live URL. Roll back with `git revert`. Avoid force rebuilds unless
-stale cache is the diagnosis.
+Push to `main`/`staging`. The workflow now waits for the build, so a green run
+means Coolify finished and the URL answered. Roll back with `git revert`. Avoid
+force rebuilds unless stale cache is the diagnosis.
 
-Record target, app UUIDs, domains, Compose path, secrets, and test results in
-`/home/moritz/okf/infra/<app>-<target>.md`.
+Every deploy recreates the whole stack, so the site returns 502 through
+Cloudflare for a minute or two. Expected — do not debug it as an outage, and
+avoid back-to-back pushes.
+
+Record target, exposure choice, app UUIDs, domains, Compose path, secrets, and
+test results in `/home/moritz/okf/infra/<app>-<target>.md`.
