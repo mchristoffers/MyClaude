@@ -3,6 +3,10 @@ name: deploy-coolify-compose
 description: "Deploy and operate private GitHub Docker Compose apps on Moritz's Coolify instances — master-1 (Hetzner VPS, production) or Homeserver (homelab): app setup, staging/prod branches, domains, exposure (public, Cloudflare Access, or internal), secrets, volumes, deploys, rollbacks, migrations, and retiring apps. Coolify clones/builds/deploys; GitHub Actions test, send signed manual webhook payloads through Cloudflare Access, then wait for the deployment result and fail on a broken build."
 ---
 
+> Source: `~/git/mchristoffers/MyClaude/skills/deploy-coolify-compose/SKILL.md`. Learned
+> something here? Edit it there and reinstall (that repo's AGENTS.md) —
+> never edit the installed copy, it is overwritten without warning.
+
 # Workflow
 
 Coolify owns runtime, domains, env, volumes, cloning, build, and deploy. Actions

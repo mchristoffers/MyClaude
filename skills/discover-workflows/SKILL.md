@@ -4,6 +4,10 @@ description: Analyze one or more chat transcripts to find repeated, stable workf
 disable-model-invocation: true
 ---
 
+> Source: `~/git/mchristoffers/MyClaude/skills/discover-workflows/SKILL.md`. Learned
+> something here? Edit it there and reinstall (that repo's AGENTS.md) —
+> never edit the installed copy, it is overwritten without warning.
+
 # Workflow
 
 1. Extract recurring goals, steps, constraints, tools, and failures from the chats.

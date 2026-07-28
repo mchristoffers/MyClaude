@@ -3,6 +3,10 @@ name: feature-workflow
 description: "Use only when implementing a new product or code feature in a Git repository. Do not use for bug fixes, refactors, maintenance, documentation, configuration, or read-only tasks. Complete the feature autonomously in a worktree through verification, merge, push, and cleanup."
 ---
 
+> Source: `~/git/mchristoffers/MyClaude/skills/feature-workflow/SKILL.md`. Learned
+> something here? Edit it there and reinstall (that repo's AGENTS.md) —
+> never edit the installed copy, it is overwritten without warning.
+
 # Workflow
 
 Always use a worktree for new features.
