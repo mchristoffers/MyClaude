@@ -1,4 +1,0 @@
-interface:
-  display_name: "Deploy Master-1 Compose"
-  short_description: "Operate master-1 Coolify Compose apps"
-  default_prompt: "Use $deploy-master1-compose for this private GitHub Compose app on master-1: setup, domains, staging/prod, Actions trigger, deploy, or rollback."

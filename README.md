@@ -17,14 +17,17 @@ provider.
 
 Analyzes chats and suggests repeated, stable workflows as new Agent Skills.
 
-### `deploy-master1-compose`
+### `deploy-coolify-compose`
 
-Deploys and maintains private-repository Docker Compose applications on the
-master-1 Coolify instance, with optional `staging` beside `main`. Coolify clones
-with a deploy key and builds on master-1; GitHub Actions only run checks and
-send signed push payloads through Cloudflare Access to Coolify's manual GitHub
-webhook. Domain bindings are exact hostnames; other subdomains may belong to
-other apps through wildcard DNS on the zone.
+Deploys and maintains private-repository Docker Compose applications on either
+Coolify instance — master-1 (Hetzner VPS, public production) or the Homeserver
+(homelab) — with optional `staging` beside `main`. The target, the domain, and
+ready-made image versus own Dockerfile build are settled up front. Coolify
+clones with a repo-scoped deploy key and builds on the target host; GitHub
+Actions only run checks and send signed push payloads through Cloudflare Access
+to Coolify's manual GitHub webhook. master-1 routes through its Traefik and
+wildcard DNS; the Homeserver has no proxy and routes through the homelab
+cloudflared tunnel with an explicit CNAME.
 
 ## Install
 
@@ -37,7 +40,7 @@ npx skills add mchristoffers/MyClaude --skill feature-workflow --global \
 npx skills add mchristoffers/MyClaude --skill discover-workflows --global \
   --agent claude-code --agent codex
 
-npx skills add mchristoffers/MyClaude --skill deploy-master1-compose --global \
+npx skills add mchristoffers/MyClaude --skill deploy-coolify-compose --global \
   --agent claude-code --agent codex
 ```
 
@@ -46,7 +49,7 @@ Update the installed skill after changes are published here:
 ```sh
 npx skills update feature-workflow --global --yes
 npx skills update discover-workflows --global --yes
-npx skills update deploy-master1-compose --global --yes
+npx skills update deploy-coolify-compose --global --yes
 ```
 
 List the skills in this repository without installing them:
@@ -81,7 +84,7 @@ Claude Code can consume the same file through a minimal `CLAUDE.md`:
 ```text
 AGENTS_SNIPPETS.md
 skills/
-├── deploy-master1-compose/
+├── deploy-coolify-compose/
 │   ├── SKILL.md
 │   └── agents/
 │       └── openai.yaml

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deploy Coolify Compose"
+  short_description: "Operate Coolify Compose apps on master-1 or the Homeserver"
+  default_prompt: "Use $deploy-coolify-compose for this private GitHub Compose app: pick master-1 or Homeserver, then setup, domains, staging/prod, Actions trigger, deploy, or rollback."
