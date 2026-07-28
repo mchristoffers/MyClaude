@@ -15,6 +15,15 @@ pipeline, or `production` branch.
 Discover repo/app details live from OKF, GitHub, Coolify, DNS, and the repo.
 Do not hardcode stale assumptions.
 
+## Repository
+
+Every app needs its own private GitHub repo first, holding the production
+Compose file. Create it before touching Coolify.
+
+Compose either pulls a ready-made image or builds the repo's own Dockerfile.
+
+Ask Moritz up front, per app: exact domain, and ready-made image vs own build.
+
 ## Setup
 
 - Branches: `main` = production, optional `staging` = stage.
