@@ -9,7 +9,9 @@ other compatible coding agents, distributed with Vercel's
 ### `feature-workflow`
 
 Completes new features autonomously in a worktree, including verification,
-commits, pushes, merge, and cleanup.
+commits, pushes, merge, and cleanup. Planning stays with the host agent;
+implementation runs through the Kimi Code CLI (`kimi`) with an OpenRouter
+provider.
 
 ### `discover-workflows`
 

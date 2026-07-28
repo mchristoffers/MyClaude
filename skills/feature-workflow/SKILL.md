@@ -11,9 +11,10 @@ Always use a worktree for new features.
 - Inspect the repository and reuse or create a worktree.
 - Create an ignored `.agent-work/PROGRESS.md` and keep it current.
 - Create a feature branch using the repository's naming rules.
-- Plan the implementation natively with the host's GPT-5.6 Sol (`gpt-5.6-sol`), never through OpenRouter.
-- Implement the plan only in the worktree with Kimi K2.7 Code
-  (`moonshotai/kimi-k2.7-code`) through OpenRouter.
+- Plan the implementation in a subagent on the host agent's own model
+  (Claude Code: Opus 5), never through OpenRouter.
+- Implement the plan only in the worktree with the Kimi Code CLI:
+  `kimi --quiet -w <worktree> -p '<plan>'`.
 - Run the required baseline and final tests; fix failures.
 - Commit the intended changes and push the feature branch.
 - Merge into the default branch and push it without asking.
@@ -21,3 +22,22 @@ Always use a worktree for new features.
 
 Complete the workflow autonomously. Never ask for merge approval, overwrite user
 changes, or force destructive Git operations.
+
+# Kimi Code CLI
+
+Install once with `uv tool install --python 3.13 kimi-cli`, then point
+`~/.kimi/config.toml` at OpenRouter:
+
+```toml
+default_model = "kimi-k2.7-code"
+
+[providers.openrouter]
+type = "openai_legacy"
+base_url = "https://openrouter.ai/api/v1"
+api_key = "<OPENROUTER_API_KEY>"
+
+[models."kimi-k2.7-code"]
+provider = "openrouter"
+model = "moonshotai/kimi-k2.7-code"
+max_context_size = 262144
+```
