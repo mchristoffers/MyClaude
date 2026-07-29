@@ -266,9 +266,9 @@ test results in `/home/moritz/okf/infra/<app>-<target>.md`.
 
 ## Beta — registry path
 
-**Not in use yet, never run end to end.** Everything above is the live workflow;
-this section is a designed-but-untested alternative. Do not pick it without
-Moritz saying so explicitly.
+**Live on `mchristoffersdev2` (stage + prod) since 2026-07-29, nowhere else.**
+Everything above is still the default for every other app. Do not pick this one
+without Moritz saying so explicitly.
 
 Adds exactly one up-front question, per app, not globally: **build on the target
 (default) or build an image and pull it from a registry.** Where the build runs
@@ -299,11 +299,26 @@ workflow goes green, and yesterday's build keeps serving. A SHA tag is absent by
 construction. It also makes rollback a changed `APP_TAG` plus a redeploy instead
 of a revert and a full rebuild.
 
-Workflow order: test, build, push, set `APP_TAG` through the Coolify API, then
-the existing webhook and poll. Fail loudly on a failed push — it is a new failure
-mode the current workflow has no branch for.
+Workflow order: test, build, push, set `APP_TAG`, **then** the existing webhook
+and poll. Setting the tag after the trigger deploys the previous one. The job
+needs `permissions: packages: write`, and a failed push must fail the run — it
+is a failure mode the pre-registry workflow has no branch for.
+
+`POST /api/v1/applications/{uuid}/envs` creates and answers 201; `PATCH` updates
+and also answers 201, but 404s while the key is missing — so PATCH first, POST as
+fallback. Body is `{"key","value","is_preview"}`; `is_build_time` is rejected
+with 422 `This field is not allowed.`
+
+Anything the target's builder used to supply must now come from the runner.
+Coolify injects `SOURCE_COMMIT` during its own builds only, so a Dockerfile that
+bakes a version stamp from it needs `build-args: SOURCE_COMMIT=${{ github.sha }}`
+or the deployed image reports `unknown`.
+
+Give `APP_TAG` no default in Compose — `${APP_TAG:?APP_TAG is required}`. A
+missing tag has to fail the deploy rather than resolve to something plausible.
 
 Each target needs one `docker login ghcr.io` with a read-only PAT, in the same
 Docker context Coolify deploys from (root). It survives stack recreates; record
 it, or a host move ends in `manifest unknown`. Set a GHCR retention policy at the
-same time.
+same time. master-1 already has such a login, but with a broad `gho_` token —
+not the read-only PAT it should be.
