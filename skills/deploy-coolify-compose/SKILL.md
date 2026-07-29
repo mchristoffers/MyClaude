@@ -290,32 +290,42 @@ for flag overrides, not for switching building off. Compose decides per service:
 `build:` builds, bare `image:` pulls. So the whole change is in the repo:
 
 ```yaml
-image: ghcr.io/mchristoffers/<app>:${APP_TAG}   # replaces build:
+image: ghcr.io/mchristoffers/<app>:${APP_TAG:?APP_TAG is required}
+pull_policy: always      # replaces build:
 ```
 
-**Tag with the commit SHA, never a moving `:main`.** `up -d` pulls only when the
-image is absent locally, so a moving tag redeploys the cached old image, the
-workflow goes green, and yesterday's build keeps serving. A SHA tag is absent by
-construction. It also makes rollback a changed `APP_TAG` plus a redeploy instead
-of a revert and a full rebuild.
+**`pull_policy: always` is load-bearing.** `up -d` pulls only when the image is
+absent locally, so on a moving `:main`/`:staging` tag the deploy would re-run the
+previously pulled build, go green, and keep serving yesterday's code. That one
+line is the whole fix — not, as it first looks, a reason to avoid moving tags.
 
-Workflow order: test, build, push, set `APP_TAG`, **then** the existing webhook
-and poll. Setting the tag after the trigger deploys the previous one. The job
-needs `permissions: packages: write`, and a failed push must fail the run — it
-is a failure mode the pre-registry workflow has no branch for.
+With it, track the branch tag and let `APP_TAG` be **static config** on the
+Coolify app (`main` / `staging`), written once by hand. The workflow then never
+touches Coolify's API, and there is no ordering hazard. Push an immutable
+`sha-<commit>` tag alongside it: same manifest, no extra storage, and it keeps a
+rollback available without a rebuild — point `APP_TAG` at the `sha-` tag,
+redeploy, and set it back to the branch name afterwards.
 
-`POST /api/v1/applications/{uuid}/envs` creates and answers 201; `PATCH` updates
-and also answers 201, but 404s while the key is missing — so PATCH first, POST as
-fallback. Body is `{"key","value","is_preview"}`; `is_build_time` is rejected
-with 422 `This field is not allowed.`
+Give `APP_TAG` no default. A missing tag has to fail the deploy rather than
+resolve to something plausible.
+
+Prove the re-pull rather than assuming it: push twice and check that the running
+container's image digest changed under the unchanged tag. That is precisely the
+failure this design has to survive.
+
+Workflow order: test, build, push, **then** the existing webhook and poll. The
+job needs `permissions: packages: write`, and a failed push must fail the run —
+it is a failure mode the pre-registry workflow has no branch for.
+
+For the manual rollback, `POST /api/v1/applications/{uuid}/envs` creates and
+answers 201; `PATCH` updates and also answers 201, but 404s while the key is
+missing. Body is `{"key","value","is_preview"}`; `is_build_time` is rejected with
+422 `This field is not allowed.`
 
 Anything the target's builder used to supply must now come from the runner.
 Coolify injects `SOURCE_COMMIT` during its own builds only, so a Dockerfile that
 bakes a version stamp from it needs `build-args: SOURCE_COMMIT=${{ github.sha }}`
 or the deployed image reports `unknown`.
-
-Give `APP_TAG` no default in Compose — `${APP_TAG:?APP_TAG is required}`. A
-missing tag has to fail the deploy rather than resolve to something plausible.
 
 Each target needs one `docker login ghcr.io` with a read-only PAT, in the same
 Docker context Coolify deploys from (root). It survives stack recreates; record
