@@ -263,3 +263,47 @@ avoid back-to-back pushes.
 
 Record target, exposure choice, app UUIDs, domains, Compose path, secrets, and
 test results in `/home/moritz/okf/infra/<app>-<target>.md`.
+
+## Beta — registry path
+
+**Not in use yet, never run end to end.** Everything above is the live workflow;
+this section is a designed-but-untested alternative. Do not pick it without
+Moritz saying so explicitly.
+
+Adds exactly one up-front question, per app, not globally: **build on the target
+(default) or build an image and pull it from a registry.** Where the build runs
+is not a question — GitHub-hosted runners, always. Self-hosted runners are out
+of scope: a home upload link is slower than a datacenter push to GHCR.
+
+Pick the registry only when the build actually hurts — OOM or minutes lost on
+master-1's 3.7 GiB, or the same image must run on both hosts. A build under
+~2 minutes is faster left on the target, because push + pull is added latency
+the build never gets back. Both variants coexist; apps do not migrate as a set.
+
+Registry is **GHCR**. The repos are already private GitHub repos, so Actions push
+with `GITHUB_TOKEN` and no new credential. A self-hosted registry would make the
+Homeserver a single point of failure for production deploys.
+
+**Nothing changes on the Coolify side.** `build_pack` stays `dockercompose`, and
+`docker_compose_custom_build_command` / `..._start_command` stay empty — they are
+for flag overrides, not for switching building off. Compose decides per service:
+`build:` builds, bare `image:` pulls. So the whole change is in the repo:
+
+```yaml
+image: ghcr.io/mchristoffers/<app>:${APP_TAG}   # replaces build:
+```
+
+**Tag with the commit SHA, never a moving `:main`.** `up -d` pulls only when the
+image is absent locally, so a moving tag redeploys the cached old image, the
+workflow goes green, and yesterday's build keeps serving. A SHA tag is absent by
+construction. It also makes rollback a changed `APP_TAG` plus a redeploy instead
+of a revert and a full rebuild.
+
+Workflow order: test, build, push, set `APP_TAG` through the Coolify API, then
+the existing webhook and poll. Fail loudly on a failed push — it is a new failure
+mode the current workflow has no branch for.
+
+Each target needs one `docker login ghcr.io` with a read-only PAT, in the same
+Docker context Coolify deploys from (root). It survives stack recreates; record
+it, or a host move ends in `manifest unknown`. Set a GHCR retention policy at the
+same time.
