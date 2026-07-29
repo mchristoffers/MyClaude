@@ -45,6 +45,22 @@ catching a wrong guess onto Moritz.
 Record every answer verbatim in the OKF page, so the next change starts from the
 decision rather than re-deriving it.
 
+**Image tags are already settled — do not ask, and do not argue it a second
+time.** Moritz's standing choice, stated 2026-07-29 while setting up Paperless:
+every app tracks the moving tag (`:latest`, or the upstream equivalent) with
+`pull_policy: always`, **major versions included**, and updates itself on a
+`schedule:` cron in its deploy workflow. He does not want to be the one deciding
+when to upgrade, and he does not care about rollback.
+
+Pinning is therefore not a recommendation to repeat. What the choice does change
+is where the safety net goes: an app that upgrades unattended across majors will
+migrate its database one way, so **set up the backup as part of the initial
+deploy, not later** — a dump on a daily host cron, timed before the update
+window, verified once by running it. "I can't lose my data" is the constraint;
+"I can go back to yesterday's version" is not. Keep a version env var
+(`<APP>_VERSION`) wired up anyway so a broken release can be pinned by hand
+without a repo change.
+
 ## Target
 
 Two independent instances. Never add one host to the other's Coolify, never
@@ -79,6 +95,11 @@ Compose either pulls a ready-made image or builds the repo's own Dockerfile.
 - Use repo-scoped read-only deploy keys. One key per repo; GitHub rejects a
   deploy key already registered on another repo.
 - Remove repo-level GitHub webhooks; Actions are the only trigger.
+
+**Values containing `{}` must be literal, not `${VAR:-default}`.** A default like
+`{created_year}/{title}` collides with Compose's own substitution syntax, and
+Coolify substitutes a second time on top. Write such settings straight into the
+Compose file with a comment; they are rarely worth making configurable.
 
 **Never bind-mount a config file from the repo.** Coolify writes only
 `docker-compose.yaml` and `.env` into `/data/coolify/applications/<uuid>/` — the
@@ -126,6 +147,26 @@ is not allowed", pointing at `docker_compose_domains`). Clear the auto-assigned
 `*.sslip.io` value with `UPDATE applications SET fqdn = NULL WHERE uuid = '…'`
 in `coolify-db`.
 
+**Internal only, but still on a `mchristoffers.dev` name** — internal exposure
+and a real hostname are not in conflict. No tunnel ingress and no CNAME; instead
+a **DNS-only (grey cloud) A record straight at the Homeserver's Tailscale IP**
+`100.115.177.45`, and the app publishes its host port as usual. The name then
+resolves for everyone but only answers inside the tailnet, so the record itself
+is the access control. Reachable at `http://<name>:<port>` from any tailnet
+device including the iPhone, and at `http://192.168.178.112:<port>` on the LAN.
+
+No TLS on that path — WireGuard already encrypts the tailnet hop, and the LAN
+hop is plaintext inside the house. A Django-style app needs the port spelled out
+in its CSRF origins (`http://<name>:<port>`), not just the bare hostname. Do not
+try to pair this with `tailscale serve`: serve wants the same port on the same
+Tailscale IP the container is already bound to, and its cert only ever matches
+`*.ts.net` anyway.
+
+**The workflow's live-URL health check has to go for an internal app.** A
+GitHub runner reaches neither the LAN nor the tailnet, so that step can only
+fail. Drop it and leave a comment saying why — Coolify's deployment status is
+then the last word.
+
 **Homeserver name collisions** — the shared `coolify` network carries the
 aliases `redis`, `postgres`, and `soketi` from Coolify's own containers. Prefix
 backing services (`<app>-db`, `<app>-redis`) or they resolve to Coolify's
@@ -163,6 +204,12 @@ Load the target's env file. Send Coolify auth, plus Cloudflare Access headers
 over a public URL. 302 means missing Access headers; 401 means bad Coolify
 token. On the Homeserver prefer the local URL — no Access needed. Sanctum tokens
 contain a `|`, so keep them double-quoted.
+
+**Creating the app already creates its env vars.** Coolify parses the Compose
+file on app creation and inserts every `${VAR}` it finds with an empty value, so
+seeding them with `POST /applications/{uuid}/envs` answers *"Environment variable
+already exists. Use PATCH request to update it."* for most keys and 201 for the
+few it missed. Just `PATCH` the whole set — it is idempotent and covers both.
 
 **Use curl, never Python's urllib, against a Cloudflare-fronted URL.** Cloudflare
 rejects its user agent with `error code: 1010` (HTTP 403) even when the Access
