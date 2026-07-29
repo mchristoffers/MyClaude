@@ -10,9 +10,8 @@ description: "Deploy and operate private GitHub Docker Compose apps on Moritz's 
 # Workflow
 
 Coolify owns runtime, domains, env, volumes, cloning, build, and deploy. Actions
-only run checks and trigger deploys. No GitHub App and no `production` branch.
-Images are built on the target; **Beta — registry path** at the bottom is the
-untested alternative, and it is a choice to put to Moritz, not a hidden one.
+only run checks and trigger deploys. No GitHub App, GHCR, registry/image-push
+pipeline, or `production` branch.
 
 Discover repo/app details live from OKF, GitHub, Coolify, DNS, and the repo.
 Do not hardcode stale assumptions.
@@ -24,10 +23,7 @@ Per app, before touching anything, get an **explicit answer from Moritz** to eac
 - Target: **master-1** or **Homeserver**.
 - Exact domain.
 - Exposure: **public**, **behind Cloudflare Access**, or **internal only**.
-- Build: a ready-made image, the repo's own Dockerfile built on the target, or
-  an image built by Actions and pulled from GHCR (beta, see the bottom). Put all
-  three to him — being untested is a caveat to say out loud, not a reason to
-  leave the third one out.
+- Ready-made image or the repo's own Dockerfile build.
 - Data store: the app's built-in/SQLite mode or a real DB service in the Compose
   file — it decides backup shape and RAM, and it is a one-way door once there is
   data.
