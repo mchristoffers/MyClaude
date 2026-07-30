@@ -174,6 +174,22 @@ app only on loopback (`127.0.0.1:<port>:<container-port>`), then:
 sudo tailscale serve --service=svc:<app> --https=443 http://127.0.0.1:<port>
 ```
 
+If Moritz explicitly wants his own domain **without making the app public**,
+replace native HTTPS with a Caddy sidecar: bake Caddy plus `caddy-dns/cloudflare`
+into the repo, obtain Let's Encrypt through DNS-01, bind it only on
+`127.0.0.1:8443`, and forward the Service as raw TCP:
+
+```sh
+sudo tailscale serve --service=svc:<app> --https=443 off
+sudo tailscale serve --service=svc:<app> --tcp=443 tcp://127.0.0.1:8443
+```
+
+Create an exact DNS-only A record from the custom name to the Service TailVIP
+and set the app's canonical URL to that name. The TailVIP remains unroutable
+outside Tailscale; prove this from a non-tailnet host. Persist Caddy `/data`,
+force the Let's Encrypt ACME endpoint, and remove any superseded master-1
+redirect. The `*.ts.net` URL no longer has a matching certificate in this mode.
+
 The `docker` node is `tag:server`. Define the Service (`tcp:443`), grant tailnet
 members access to it, and auto-approve `tag:server` in the policy. Tailscale
 admin OAuth (`all`) lives in `~/.config/tailscale-admin.env`; use the API rather
