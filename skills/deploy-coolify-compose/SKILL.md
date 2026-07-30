@@ -110,6 +110,14 @@ container dies with `not a directory`. Ship config by baking it into a small
 image (`build:` context with a `COPY`, plus a syntax check in the Dockerfile).
 Pasting it into Coolify's file-mount UI instead splits the source of truth.
 
+**Paperless AI:** prefer Paperless v3's native `PAPERLESS_AI_*` configuration
+over `clusterzx/paperless-ai`, a fork, or a custom worker. Moritz accepts its
+manual suggest/review/apply flow; do not add automation around it. Use the
+OpenAI-like backend with OpenRouter, `google/gemini-2.5-flash-lite`, and
+`https://openrouter.ai/api/v1`; omit embeddings, RAG, extra UI, services, and
+ports. Keep the API key only in Coolify. Validate `AIClient` with synthetic text
+without creating a fake archive document.
+
 ## Domains
 
 Check FQDN conflicts before binding. Verify HTTPS on the real hostname when done.
