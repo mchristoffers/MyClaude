@@ -5,7 +5,7 @@ description: Read or update AppFlowy document and collaboration objects through 
 
 # AppFlowy Collab
 
-Read `../../references/collab.md` before acting. AppFlowy collabs are Yjs
+Read `references/collab.md` before acting. AppFlowy collabs are Yjs
 documents, not plain JSON.
 
 ## Safe workflow
@@ -14,7 +14,7 @@ documents, not plain JSON.
 2. Fetch the current collab and save the raw state.
 3. Decode or modify it only with a schema-compatible AppFlowy/Yjs client.
 4. Encode a Yjs update, inspect the request, and send it through
-   `../../scripts/appflowy_http.py` with `--execute-write`.
+   `$appflowy-direct` with `--execute-write`.
 5. Fetch and validate the collab again.
 
 Do not construct block maps by guesswork or replace `doc_state` with text. The
@@ -22,5 +22,4 @@ helper deliberately provides transport and raw state handling, not a high-level
 block editor: silently corrupting a collab is worse than declining an
 unsupported edit.
 
-Publishing a page is a separate REST operation; consult
-`../../references/endpoints.md`.
+Publishing a page is a separate REST operation; use `$appflowy-direct`.

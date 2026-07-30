@@ -54,10 +54,10 @@ mutation; route payloads can change between Cloud releases.
 ## CLI patterns
 
 ```sh
-python3 ../../scripts/appflowy_http.py GET /api/user/profile --show-body
-python3 ../../scripts/appflowy_http.py GET /api/search/WORKSPACE_ID \
+python3 scripts/appflowy_http.py GET /api/user/profile --show-body
+python3 scripts/appflowy_http.py GET /api/search/WORKSPACE_ID \
   --query query=term --query limit=20 --show-body
-python3 ../../scripts/appflowy_http.py PUT \
+python3 scripts/appflowy_http.py PUT \
   /api/file_storage/WORKSPACE_ID/v1/blob/VIEW_ID \
   --upload /tmp/file.bin --content-type application/octet-stream --execute-write
 ```

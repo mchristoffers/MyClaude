@@ -10,7 +10,7 @@ from unittest import mock
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
-MODULE_PATH = Path(__file__).parents[1] / "scripts" / "appflowy_http.py"
+MODULE_PATH = Path(__file__).parents[1] / "skills" / "appflowy-direct" / "scripts" / "appflowy_http.py"
 SPEC = importlib.util.spec_from_file_location("appflowy_http", MODULE_PATH)
 api = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader

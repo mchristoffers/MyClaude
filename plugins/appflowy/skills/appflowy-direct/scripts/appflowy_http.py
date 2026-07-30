@@ -95,7 +95,7 @@ def parse_retry_after(headers: Any) -> float:
 class TokenStore:
     def __init__(self, path: Path):
         self.path = path.expanduser().resolve()
-        plugin_root = Path(__file__).resolve().parents[1]
+        plugin_root = Path(__file__).resolve().parents[3]
         if self.path == plugin_root or plugin_root in self.path.parents:
             raise AppFlowyError("token cache must be outside the plugin repository")
 

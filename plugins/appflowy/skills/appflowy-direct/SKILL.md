@@ -5,13 +5,13 @@ description: Operate a self-hosted AppFlowy instance through its native GoTrue a
 
 # AppFlowy Direct
 
-Call AppFlowy directly with `../../scripts/appflowy_http.py`. Never introduce an
+Call AppFlowy directly with `scripts/appflowy_http.py`. Never introduce an
 MCP server, proxy, daemon, or container.
 
 ## Workflow
 
-1. Read `../../references/compatibility.md` and the relevant section of
-   `../../references/endpoints.md`.
+1. Read `references/compatibility.md` and the relevant section of
+   `references/endpoints.md`.
 2. Confirm `APPFLOWY_BASE_URL`, `APPFLOWY_EMAIL`, and `APPFLOWY_PASSWORD` exist
    in the environment. Never print them or pass credentials as arguments.
 3. Read before writing. Use `--dry-run` to inspect a mutation.
@@ -20,9 +20,9 @@ MCP server, proxy, daemon, or container.
 5. Fetch the affected object again and verify the result.
 
 ```sh
-python3 ../../scripts/appflowy_http.py GET /api/workspace \
+python3 scripts/appflowy_http.py GET /api/workspace \
   --query include_role=true --show-body
-python3 ../../scripts/appflowy_http.py PATCH /api/workspace/WORKSPACE_ID \
+python3 scripts/appflowy_http.py PATCH /api/workspace/WORKSPACE_ID \
   --json-file /tmp/appflowy-change.json --execute-write --dry-run
 ```
 

@@ -5,8 +5,8 @@ description: Read and manage AppFlowy databases through native HTTP endpoints. U
 
 # AppFlowy Database
 
-Read `../../references/database.md` before constructing a field or cell payload.
-Use `../../scripts/appflowy_http.py` for transport.
+Read `references/database.md` before constructing a field or cell payload.
+Use `$appflowy-direct` for transport.
 
 ## Workflow
 
