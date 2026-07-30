@@ -119,8 +119,8 @@ only for tunnel/external/mail exceptions. Coolify binds exact hostnames per app:
 put Compose app domains in `docker_compose_domains`, not top-level `domains`.
 If the web service joins multiple networks, add `traefik.docker.network=coolify`.
 
-**Homeserver** — the house has no public IP, so every published app goes through
-the tunnel. That part is not a choice; only the exposure below is.
+**Homeserver** — public apps go through the shared cloudflared tunnel; internal
+apps use native Tailscale Services.
 
 **One tunnel serves the whole host** — the homelab cloudflared tunnel
 `758ee962-…`, container `homelab-tunnel-1`, already carrying every homelab
@@ -147,20 +147,20 @@ is not allowed", pointing at `docker_compose_domains`). Clear the auto-assigned
 `*.sslip.io` value with `UPDATE applications SET fqdn = NULL WHERE uuid = '…'`
 in `coolify-db`.
 
-**Internal only, but still on a `mchristoffers.dev` name** — internal exposure
-and a real hostname are not in conflict. No tunnel ingress and no CNAME; instead
-a **DNS-only (grey cloud) A record straight at the Homeserver's Tailscale IP**
-`100.115.177.45`, and the app publishes its host port as usual. The name then
-resolves for everyone but only answers inside the tailnet, so the record itself
-is the access control. Reachable at `http://<name>:<port>` from any tailnet
-device including the iPhone, and at `http://192.168.178.112:<port>` on the LAN.
+**Internal only** — use a native Tailscale Service: `svc:<app>` becomes
+`https://<app>.tail28fd13.ts.net`, with MagicDNS and Let's Encrypt managed by
+Tailscale. No Cloudflare record/tunnel, Funnel, Caddy, or sidecar. Publish the
+app only on loopback (`127.0.0.1:<port>:<container-port>`), then:
 
-No TLS on that path — WireGuard already encrypts the tailnet hop, and the LAN
-hop is plaintext inside the house. A Django-style app needs the port spelled out
-in its CSRF origins (`http://<name>:<port>`), not just the bare hostname. Do not
-try to pair this with `tailscale serve`: serve wants the same port on the same
-Tailscale IP the container is already bound to, and its cert only ever matches
-`*.ts.net` anyway.
+```sh
+sudo tailscale serve --service=svc:<app> --https=443 http://127.0.0.1:<port>
+```
+
+The `docker` node is `tag:server`. Define the Service (`tcp:443`), grant tailnet
+members access to it, and auto-approve `tag:server` in the policy. Tailscale
+admin OAuth (`all`) lives in `~/.config/tailscale-admin.env`; use the API rather
+than asking Moritz for console clicks. Keep each app isolated from the external
+`coolify` network unless it actually needs that network.
 
 **The workflow's live-URL health check has to go for an internal app.** A
 GitHub runner reaches neither the LAN nor the tailnet, so that step can only
@@ -195,8 +195,8 @@ clients, WebDAV, CLI tools — because they cannot complete the login redirect a
 just see a 302. If the app has such clients, either stay public or accept that
 only the browser works. Say this out loud when Access is picked.
 
-**Internal only** — no tunnel ingress, no public hostname; reachable over LAN or
-Tailscale. Cheapest and safest when nothing off-network needs it.
+**Internal only** — no public ingress; reachable only through its native
+Tailscale Service name. Cheapest and safest when nothing off-tailnet needs it.
 
 ## API access
 
