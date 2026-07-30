@@ -2,17 +2,6 @@ This repository contains my central workflows.
 Keep skill text as short as possible.
 Moritz's central knowledge base uses OKF v0.2; see `/home/moritz/okf/reference/okf-spec.md`.
 
-## Tailscale can be managed directly
-
-Agents have full Tailnet administration through the OAuth client in
-`/home/moritz/.config/tailscale-admin.env` (`0600`, scope `all`). Source that
-file and use the Tailscale API instead of asking Moritz for routine admin-console
-clicks. It covers devices, tags, ACL/grants, Services and DNS-related Tailnet
-configuration. Resolve and verify exact targets before mutations, preserve
-unrelated policy, and never print the client secret. Durable details and the
-native-Service pattern live in
-`/home/moritz/okf/infra/tailscale-admin-api.md`.
-
 ## Skills are edited here, never where they are installed
 
 `~/.claude/skills/<name>/` (Claude Code) and `~/.agents/skills/<name>/` (Codex)
