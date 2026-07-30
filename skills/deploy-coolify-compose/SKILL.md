@@ -192,6 +192,11 @@ outside Tailscale; prove this from a non-tailnet host. Persist Caddy `/data`,
 force the Let's Encrypt ACME endpoint, and remove any superseded master-1
 redirect. The `*.ts.net` URL no longer has a matching certificate in this mode.
 
+Finish native-client setup too. For Paperless/Paperparrot, connect Tailscale on
+iOS first, enter the exact custom origin without an extra path, then use the app
+credentials; never configure the superseded `*.ts.net` name. Test login and sync,
+and record the client name and non-secret setup values in the app's OKF page.
+
 The `docker` node is `tag:server`. Define the Service (`tcp:443`), grant tailnet
 members access to it, and auto-approve `tag:server` in the policy. Tailscale
 admin OAuth (`all`) lives in `~/.config/tailscale-admin.env`; use the API rather
