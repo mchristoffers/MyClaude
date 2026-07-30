@@ -133,7 +133,9 @@ If the web service joins multiple networks, add `traefik.docker.network=coolify`
 
 For a public legacy alias of an internal Tailscale app, create a tiny
 master-1 Coolify Docker-image resource whose Traefik `RedirectRegex` middleware
-permanently redirects both HTTP and HTTPS to the native Tailscale Service.
+redirects both HTTP and HTTPS to the native Tailscale Service. Use a permanent
+redirect only after the alias is final: Safari retains it across DNS flushes,
+so reversing the hostname later requires clearing Website Data for both names.
 Preserve path and query. This gives the alias Let's Encrypt without exposing the
 app; the redirect target remains inaccessible outside the tailnet.
 
