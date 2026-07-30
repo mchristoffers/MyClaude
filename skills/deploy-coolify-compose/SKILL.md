@@ -114,10 +114,28 @@ Pasting it into Coolify's file-mount UI instead splits the source of truth.
 
 Check FQDN conflicts before binding. Verify HTTPS on the real hostname when done.
 
+**HTTPS is mandatory on every user-facing path; no HTTP/LAN fallback.**
+Moritz prefers Let's Encrypt wherever the endpoint supports it:
+
+- master-1: Coolify Traefik obtains and renews Let's Encrypt.
+- internal: native Tailscale Services obtain and renew Let's Encrypt.
+- Homeserver tunnel: Cloudflare terminates browser TLS with its managed edge
+  certificate; do not add Caddy/Let's Encrypt behind the tunnel just to change
+  the invisible origin certificate.
+
+Verify the hostname, issuer, TLS validation, and HTTP 200. Close direct plaintext
+bindings or redirect them to HTTPS.
+
 **master-1** — apex + wildcard already point there; keep explicit DNS records
 only for tunnel/external/mail exceptions. Coolify binds exact hostnames per app:
 put Compose app domains in `docker_compose_domains`, not top-level `domains`.
 If the web service joins multiple networks, add `traefik.docker.network=coolify`.
+
+For a public legacy alias of an internal Tailscale app, create a tiny
+master-1 Coolify Docker-image resource whose Traefik `RedirectRegex` middleware
+permanently redirects both HTTP and HTTPS to the native Tailscale Service.
+Preserve path and query. This gives the alias Let's Encrypt without exposing the
+app; the redirect target remains inaccessible outside the tailnet.
 
 **Homeserver** — public apps go through the shared cloudflared tunnel; internal
 apps use native Tailscale Services.
