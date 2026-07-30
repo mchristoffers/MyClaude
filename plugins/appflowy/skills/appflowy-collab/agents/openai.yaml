@@ -1,0 +1,4 @@
+interface:
+  display_name: "AppFlowy Collab"
+  short_description: "Work safely with AppFlowy collab state"
+  default_prompt: "Use $appflowy-collab to read or update an AppFlowy collaboration object safely."

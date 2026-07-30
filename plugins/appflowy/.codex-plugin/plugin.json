@@ -1,0 +1,18 @@
+{
+  "name": "appflowy",
+  "version": "0.1.0",
+  "description": "Operate self-hosted AppFlowy directly through its HTTP API.",
+  "author": {
+    "name": "Moritz Christoffers"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AppFlowy",
+    "shortDescription": "Use a self-hosted AppFlowy API directly.",
+    "longDescription": "Read and manage AppFlowy workspaces, documents, databases, files, sharing, imports, exports, and publishing over the native HTTP API. No MCP adapter is involved.",
+    "developerName": "Moritz Christoffers",
+    "category": "Productivity",
+    "capabilities": ["Direct HTTP API", "Documents", "Databases", "Files"],
+    "defaultPrompt": "Use $appflowy-direct to work with my self-hosted AppFlowy instance."
+  }
+}

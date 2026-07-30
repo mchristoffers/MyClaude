@@ -1,0 +1,4 @@
+interface:
+  display_name: "AppFlowy Direct"
+  short_description: "Call a self-hosted AppFlowy API directly"
+  default_prompt: "Use $appflowy-direct to work with my self-hosted AppFlowy over its native HTTP API."

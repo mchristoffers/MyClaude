@@ -1,0 +1,4 @@
+interface:
+  display_name: "AppFlowy Database"
+  short_description: "Manage AppFlowy fields and rows"
+  default_prompt: "Use $appflowy-database to work with AppFlowy databases, fields, and rows."

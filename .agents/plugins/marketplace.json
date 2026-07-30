@@ -1,0 +1,20 @@
+{
+  "name": "myclaude",
+  "interface": {
+    "displayName": "MyClaude"
+  },
+  "plugins": [
+    {
+      "name": "appflowy",
+      "source": {
+        "source": "local",
+        "path": "./plugins/appflowy"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
