@@ -85,7 +85,9 @@ state. The host's standing choice is Docker's official
 the disk is absent. Do not replace it with a custom volume plugin or a bind of
 Docker's internal `volumes/` directory. Use host bind mounts only when data must
 deliberately be visible outside Docker. Check `infra/coolify-homeserver.md`
-before starting Docker or relying on the migration state.
+before starting Docker or relying on the migration state. On Docker 29, the
+containerd image store remains separately under `/var/lib/containerd`; leave it
+on the SSD when the goal is moving persistent volume data.
 
 ## Repository
 
