@@ -87,12 +87,6 @@ Docker's internal `volumes/` directory. Use host bind mounts only when data must
 deliberately be visible outside Docker. Check `infra/coolify-homeserver.md`
 before starting Docker or relying on the migration state.
 
-Keep Homeserver Docker, its socket, containerd, Coolify and per-app control
-units boot-disabled unless Moritz explicitly changes that policy. Do not add
-systemd, cron, desktop or init autostarts. Compose restart policies may remain
-for crash recovery during a deliberately started Docker session; they are not a
-substitute for host boot enablement.
-
 ## Repository
 
 Every app needs its own private GitHub repo first, holding the production
