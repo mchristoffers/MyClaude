@@ -282,6 +282,12 @@ rejects its user agent with `error code: 1010` (HTTP 403) even when the Access
 headers are correct — a retry loop then spins forever instead of failing. This
 only bites over the public hostname; local calls are unaffected.
 
+On Homeserver Coolify 4.1.2, stopping an application does not cancel an
+in-flight deployment, and `POST /deployments/{uuid}/cancel` fails with
+`Undefined variable $application`. Wait for the queue to drain, stop the
+resource again, then verify both zero active deployments and zero unwanted
+containers across several checks.
+
 ## Actions trigger
 
 - `COOLIFY_GITHUB_WEBHOOK` — the target's `/webhooks/source/github/events/manual`
