@@ -79,6 +79,14 @@ Pick the Homeserver when the app is stateful, storage-hungry, or not worth VPS
 resources. Check the target's free memory, swap, and disk before the first
 build; do not let OOM decide.
 
+Keep Homeserver Compose files host-agnostic: use ordinary named volumes for app
+state. The host's standing choice is Docker's official
+`data-root=/media/8tb/docker`, with a systemd dependency that fails closed when
+the disk is absent. Do not replace it with a custom volume plugin or a bind of
+Docker's internal `volumes/` directory. Use host bind mounts only when data must
+deliberately be visible outside Docker. Check `infra/coolify-homeserver.md`
+before starting Docker or relying on the migration state.
+
 ## Repository
 
 Every app needs its own private GitHub repo first, holding the production
