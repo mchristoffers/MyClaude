@@ -1,0 +1,4 @@
+interface:
+  display_name: "Read Codex Chat"
+  short_description: "Read a past Codex chat without loading its events"
+  default_prompt: "Use $read-codex-chat to find and summarize this earlier Codex conversation."

@@ -17,6 +17,12 @@ provider.
 
 Analyzes chats and suggests repeated, stable workflows as new Agent Skills.
 
+### `read-codex-chat`
+
+Reads a past Codex conversation from its local rollout file, extracting only the
+user and assistant message texts so the megabytes of tool-call and reasoning
+events never reach the context window.
+
 ### `deploy-coolify-compose`
 
 Deploys and maintains private-repository Docker Compose applications on either
@@ -42,6 +48,9 @@ npx skills add mchristoffers/MyClaude --skill discover-workflows --global \
 
 npx skills add mchristoffers/MyClaude --skill deploy-coolify-compose --global \
   --agent claude-code --agent codex
+
+npx skills add mchristoffers/MyClaude --skill read-codex-chat --global \
+  --agent claude-code --agent codex
 ```
 
 Update the installed skill after changes are published here:
@@ -50,6 +59,7 @@ Update the installed skill after changes are published here:
 npx skills update feature-workflow --global --yes
 npx skills update discover-workflows --global --yes
 npx skills update deploy-coolify-compose --global --yes
+npx skills update read-codex-chat --global --yes
 ```
 
 List the skills in this repository without installing them:
@@ -92,7 +102,11 @@ skills/
 │   ├── SKILL.md
 │   └── agents/
 │       └── openai.yaml
-└── feature-workflow/
+├── feature-workflow/
+│   ├── SKILL.md
+│   └── agents/
+│       └── openai.yaml
+└── read-codex-chat/
     ├── SKILL.md
     └── agents/
         └── openai.yaml
