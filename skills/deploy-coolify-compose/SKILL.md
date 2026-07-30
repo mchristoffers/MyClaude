@@ -101,6 +101,13 @@ Compose either pulls a ready-made image or builds the repo's own Dockerfile.
 Coolify substitutes a second time on top. Write such settings straight into the
 Compose file with a comment; they are rarely worth making configurable.
 
+Use literal sources for host bind mounts too: Coolify misparses
+`${ROOT:-/host/path}/subdir` and may mount the root at the wrong container path,
+leaving the intended path on a disposable anonymous volume. For `postgres:18`,
+mount persistent storage at `/var/lib/postgresql`, not the old
+`/var/lib/postgresql/data`; v18 keeps the real cluster in a versioned directory
+under the parent.
+
 **Never bind-mount a config file from the repo.** Coolify writes only
 `docker-compose.yaml` and `.env` into `/data/coolify/applications/<uuid>/` — the
 working tree is not materialised there. A relative `./conf/app.conf` mount is
