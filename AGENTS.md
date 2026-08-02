@@ -1,6 +1,7 @@
 This repository contains my central workflows.
 Keep skill text as short as possible.
 Moritz's central knowledge base uses OKF v0.2; see `/home/moritz/okf/reference/okf-spec.md`.
+SKILL.md frontmatter notation: see [reference/skill-frontmatter.md](reference/skill-frontmatter.md).
 
 ## Skills are edited here, never where they are installed
 
