@@ -1,6 +1,7 @@
 ---
 name: kimi
-description: "Only use when the user explicitly invokes /kimi or explicitly asks to run the Kimi Code CLI. Never trigger automatically for general implementation work. Runs the Kimi Code CLI to implement a given plan or task purely as code — nothing else (no planning, no git, no merging)."
+description: "Runs the Kimi Code CLI to implement a given plan or task purely as code — nothing else (no planning, no git, no merging)."
+disable-model-invocation: true
 ---
 
 > Source: `~/git/mchristoffers/MyClaude/skills/kimi/SKILL.md`. Learned
