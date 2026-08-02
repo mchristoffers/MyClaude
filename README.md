@@ -6,12 +6,11 @@ other compatible coding agents, distributed with Vercel's
 
 ## Available skills
 
-### `feature-workflow`
+### `kimi`
 
-Completes new features autonomously in a worktree, including verification,
-commits, pushes, merge, and cleanup. Planning stays with the host agent;
-implementation runs through the Kimi Code CLI (`kimi`) with an OpenRouter
-provider.
+Runs the Kimi Code CLI to implement a given plan or task purely as code —
+nothing else: no planning, no worktree or branch management, no committing, no
+merging. Invoked explicitly by name; never model-invoked.
 
 ### `discover-workflows`
 
@@ -40,7 +39,7 @@ cloudflared tunnel with an explicit CNAME.
 Install a skill globally for Claude Code and Codex:
 
 ```sh
-npx skills add mchristoffers/MyClaude --skill feature-workflow --global \
+npx skills add mchristoffers/MyClaude --skill kimi --global \
   --agent claude-code --agent codex
 
 npx skills add mchristoffers/MyClaude --skill discover-workflows --global \
@@ -56,7 +55,7 @@ npx skills add mchristoffers/MyClaude --skill read-codex-chat --global \
 Update the installed skill after changes are published here:
 
 ```sh
-npx skills update feature-workflow --global --yes
+npx skills update kimi --global --yes
 npx skills update discover-workflows --global --yes
 npx skills update deploy-coolify-compose --global --yes
 npx skills update read-codex-chat --global --yes
@@ -68,31 +67,12 @@ List the skills in this repository without installing them:
 npx skills add mchristoffers/MyClaude --list
 ```
 
-## Activate the workflow persistently
-
-Copy the block from [`AGENTS_SNIPPETS.md`](AGENTS_SNIPPETS.md)
-into any persistent instruction scope where the workflow should apply:
-
-- Repository-wide Codex instructions: `AGENTS.md`
-- User-wide Codex instructions: `~/.codex/AGENTS.md`
-- Repository-wide Claude Code instructions: `CLAUDE.md`
-- User-wide Claude Code instructions: `~/.claude/CLAUDE.md`
-- A supported machine-managed instruction file
-
-The block mentions the skill by name and contains no home-relative, absolute, or
-agent-specific skill path. Each agent resolves its own installed skill location.
-
-When a repository already uses `AGENTS.md` as the shared source of instructions,
-Claude Code can consume the same file through a minimal `CLAUDE.md`:
-
-```markdown
-@AGENTS.md
-```
-
 ## Layout
 
 ```text
-AGENTS_SNIPPETS.md
+AGENTS.md
+reference/
+└── skill-frontmatter.md
 skills/
 ├── deploy-coolify-compose/
 │   ├── SKILL.md
@@ -102,10 +82,8 @@ skills/
 │   ├── SKILL.md
 │   └── agents/
 │       └── openai.yaml
-├── feature-workflow/
-│   ├── SKILL.md
-│   └── agents/
-│       └── openai.yaml
+├── kimi/
+│   └── SKILL.md
 └── read-codex-chat/
     ├── SKILL.md
     └── agents/
