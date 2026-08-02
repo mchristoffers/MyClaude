@@ -1,4 +1,0 @@
-interface:
-  display_name: "Feature Workflow"
-  short_description: "Deliver new features autonomously"
-  default_prompt: "Use $feature-workflow to implement, verify, merge, and deliver this new feature."
