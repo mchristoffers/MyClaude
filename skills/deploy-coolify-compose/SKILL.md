@@ -207,30 +207,37 @@ is not allowed", pointing at `docker_compose_domains`). Clear the auto-assigned
 `*.sslip.io` value with `UPDATE applications SET fqdn = NULL WHERE uuid = '…'`
 in `coolify-db`.
 
-**Internal only** — use a native Tailscale Service: `svc:<app>` becomes
+**Internal only** — always gets a dedicated `mchristoffers.dev` subdomain
+routed straight at it via a Caddy sidecar, the way Paperless is set up. This is
+not an opt-in for when Moritz asks for his own domain — it is the standard, so
+the plain native-only setup below is a stepping stone on the way there, never
+the accepted end state for an internal app.
+
+Start with the native Tailscale Service: `svc:<app>` becomes
 `https://<app>.tail28fd13.ts.net`, with MagicDNS and Let's Encrypt managed by
-Tailscale. No Cloudflare record/tunnel, Funnel, Caddy, or sidecar. Publish the
-app only on loopback (`127.0.0.1:<port>:<container-port>`), then:
+Tailscale. Publish the app only on loopback (`127.0.0.1:<port>:<container-port>`),
+then:
 
 ```sh
 sudo tailscale serve --service=svc:<app> --https=443 http://127.0.0.1:<port>
 ```
 
-If Moritz explicitly wants his own domain **without making the app public**,
-replace native HTTPS with a Caddy sidecar: bake Caddy plus `caddy-dns/cloudflare`
-into the repo, obtain Let's Encrypt through DNS-01, bind it only on
-`127.0.0.1:8443`, and forward the Service as raw TCP:
+Then replace that native HTTPS with a Caddy sidecar so the app answers on its
+own `mchristoffers.dev` subdomain **without becoming public**: bake Caddy plus
+`caddy-dns/cloudflare` into the repo, obtain Let's Encrypt through DNS-01, bind
+it only on `127.0.0.1:8443`, and forward the Service as raw TCP:
 
 ```sh
 sudo tailscale serve --service=svc:<app> --https=443 off
 sudo tailscale serve --service=svc:<app> --tcp=443 tcp://127.0.0.1:8443
 ```
 
-Create an exact DNS-only A record from the custom name to the Service TailVIP
-and set the app's canonical URL to that name. The TailVIP remains unroutable
-outside Tailscale; prove this from a non-tailnet host. Persist Caddy `/data`,
-force the Let's Encrypt ACME endpoint, and remove any superseded master-1
-redirect. The `*.ts.net` URL no longer has a matching certificate in this mode.
+Create an exact DNS-only A record from the subdomain to the Service TailVIP and
+set the app's canonical URL to that name. The TailVIP remains unroutable outside
+Tailscale; prove this from a non-tailnet host. Persist Caddy `/data`, force the
+Let's Encrypt ACME endpoint, and remove any superseded master-1 redirect. The
+`*.ts.net` URL no longer has a matching certificate in this mode — the
+`mchristoffers.dev` subdomain is the one URL to hand out.
 
 Finish native-client setup too. For Paperless/Paperparrot, connect Tailscale on
 iOS first, enter the exact custom origin without an extra path, then use the app
@@ -276,8 +283,11 @@ clients, WebDAV, CLI tools — because they cannot complete the login redirect a
 just see a 302. If the app has such clients, either stay public or accept that
 only the browser works. Say this out loud when Access is picked.
 
-**Internal only** — no public ingress; reachable only through its native
-Tailscale Service name. Cheapest and safest when nothing off-tailnet needs it.
+**Internal only** — no public ingress; reachable through its native Tailscale
+Service and, always, a dedicated `mchristoffers.dev` subdomain routed directly
+at it via a Caddy sidecar (see **Domains**). Still not public: the subdomain's
+target stays unroutable outside Tailscale. Cheapest and safest when nothing
+off-tailnet needs it.
 
 ## API access
 
