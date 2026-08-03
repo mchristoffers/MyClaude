@@ -1,6 +1,6 @@
 ---
 name: deploy-coolify-compose
-description: "Deploy and operate private GitHub Docker Compose apps on Moritz's Coolify instances — master-1 (Hetzner VPS, production) or Homeserver (homelab): app setup, staging/prod branches, domains, exposure (public, Cloudflare Access, or internal), secrets, volumes, deploys, rollbacks, migrations, and retiring apps. Coolify clones/builds/deploys; GitHub Actions test, send signed manual webhook payloads through Cloudflare Access, then wait for the deployment result and fail on a broken build."
+description: "Deploy and operate private GitHub Docker Compose apps on Moritz's Coolify instances — master-1 (Hetzner VPS, production) or Homeserver (homelab): app setup, staging/prod branches, domains, exposure (public, Cloudflare Access, or internal), secrets, volumes, deploys, rollbacks, migrations, and retiring apps. GitHub Actions test, build+push any own-Dockerfile image to GHCR, send signed manual webhook payloads through Cloudflare Access, then wait for the deployment result and fail on a broken build. Coolify only ever pulls and runs — it never builds."
 ---
 
 > Source: `~/git/mchristoffers/MyClaude/skills/deploy-coolify-compose/SKILL.md`. Learned
@@ -9,21 +9,31 @@ description: "Deploy and operate private GitHub Docker Compose apps on Moritz's 
 
 # Workflow
 
-Coolify owns runtime, domains, env, volumes, cloning, build, and deploy. Actions
-only run checks and trigger deploys. No GitHub App, GHCR, registry/image-push
-pipeline, or `production` branch.
+Coolify owns runtime, domains, env, volumes, and deploy. For apps with their own
+Dockerfile, GitHub Actions builds and pushes the image to GHCR — Coolify only
+ever pulls, never builds. Actions run checks, build+push, then trigger and wait
+on the deploy. No GitHub App, no `production` branch.
 
 Discover repo/app details live from OKF, GitHub, Coolify, DNS, and the repo.
 Do not hardcode stale assumptions.
 
 ## Ask up front
 
-Per app, before touching anything, get an **explicit answer from Moritz** to each:
+**Every decision in this workflow is Moritz's, full stop — there is no step in
+this file, from picking the target to the last domain/ingress detail, that gets
+settled without his explicit word on that exact app.** Not applied by default,
+not carried over from the last app, not chosen because it's "obviously" right.
+Per app, before touching anything, get an **explicit answer from Moritz** to
+each of these, and to every target/exposure/domain sub-choice raised later in
+this file (e.g. Homeserver's public-vs-internal ingress, an internal app's
+native-vs-custom-domain):
 
 - Target: **master-1** or **Homeserver**.
 - Exact domain.
 - Exposure: **public**, **behind Cloudflare Access**, or **internal only**.
-- Ready-made image or the repo's own Dockerfile build.
+- Ready-made image or the repo's own Dockerfile build — if it's the repo's own
+  Dockerfile, it always builds via GitHub Actions → GHCR (see **Build &
+  registry**); there is no on-target-build alternative left to choose between.
 - Data store: the app's built-in/SQLite mode or a real DB service in the Compose
   file — it decides backup shape and RAM, and it is a one-way door once there is
   data.
@@ -31,7 +41,8 @@ Per app, before touching anything, get an **explicit answer from Moritz** to eac
 These are Moritz's calls, not judgment calls to absorb. Never settle one by
 inference — not from the app's nature, not from what a comparable app got, not
 from the target's resources, not from an OKF note. Recommend by all means, but
-the recommendation is not the answer.
+the recommendation is not the answer, and offering it is not a substitute for
+waiting on his.
 
 **A refused or unanswered question is not consent to proceed on a default.**
 If the question tool is denied or the answer does not come, ask again in plain
@@ -40,7 +51,9 @@ answer shares — read the repo, check resources, list free ports. Do not create
 the repo, the Coolify app, DNS, or ingress on an assumed answer; unwinding those
 costs more than waiting. Announcing an assumption is not the same as getting an
 answer, and "I'll say what I picked and he can correct me" pushes the work of
-catching a wrong guess onto Moritz.
+catching a wrong guess onto Moritz. This holds even when a previous app already
+answered the same question — a repeat answer still has to come from Moritz for
+this app, not be copied forward.
 
 Record every answer verbatim in the OKF page, so the next change starts from the
 decision rather than re-deriving it.
@@ -94,7 +107,9 @@ on the SSD when the goal is moving persistent volume data.
 Every app needs its own private GitHub repo first, holding the production
 Compose file. Create it before touching Coolify.
 
-Compose either pulls a ready-made image or builds the repo's own Dockerfile.
+Compose either pulls a ready-made image, or pulls an image that Actions built
+from the repo's own Dockerfile and pushed to GHCR — see **Build & registry**.
+Coolify itself never runs a `docker build`.
 
 - Branches: `main` = production, optional `staging` = stage.
 - One Coolify Docker Compose app per branch.
@@ -383,21 +398,19 @@ avoid back-to-back pushes.
 Record target, exposure choice, app UUIDs, domains, Compose path, secrets, and
 test results in `/home/moritz/okf/infra/<app>-<target>.md`.
 
-## Beta — registry path
+## Build & registry
 
-**Live on `mchristoffersdev2` (stage + prod) since 2026-07-29, nowhere else.**
-Everything above is still the default for every other app. Do not pick this one
-without Moritz saying so explicitly.
+For any app that builds from its own Dockerfile, this is the only path — there
+is no on-target-build alternative to weigh, and nothing to ask about beyond the
+**Ask up front** items already on the list. Apps that just pull a ready-made
+image (`postgres:18`, `nextcloud:latest`, …) skip this whole section; there is
+nothing here for Coolify to build or Actions to push.
 
-Adds exactly one up-front question, per app, not globally: **build on the target
-(default) or build an image and pull it from a registry.** Where the build runs
-is not a question — GitHub-hosted runners, always. Self-hosted runners are out
-of scope: a home upload link is slower than a datacenter push to GHCR.
-
-Pick the registry only when the build actually hurts — OOM or minutes lost on
-master-1's 3.7 GiB, or the same image must run on both hosts. A build under
-~2 minutes is faster left on the target, because push + pull is added latency
-the build never gets back. Both variants coexist; apps do not migrate as a set.
+In production since 2026-07-29 (first on `mchristoffersdev2`); this is the
+standing approach for every app built from its own Dockerfile going forward,
+not a per-app opt-in. Where the build runs is not a question either —
+GitHub-hosted runners, always. Self-hosted runners are out of scope: a home
+upload link is slower than a datacenter push to GHCR.
 
 Registry is **GHCR**. The repos are already private GitHub repos, so Actions push
 with `GITHUB_TOKEN` and no new credential. A self-hosted registry would make the
@@ -405,18 +418,27 @@ Homeserver a single point of failure for production deploys.
 
 **Nothing changes on the Coolify side.** `build_pack` stays `dockercompose`, and
 `docker_compose_custom_build_command` / `..._start_command` stay empty — they are
-for flag overrides, not for switching building off. Compose decides per service:
-`build:` builds, bare `image:` pulls. So the whole change is in the repo:
+for flag overrides, not for switching building off. **Keep `build:` in the
+service, do not strip it** — Actions needs it so `docker compose build` (against
+this same file) is what produces the image to push, instead of a separate
+Dockerfile-only build command. `pull_policy: always` is what stops Coolify from
+ever invoking that `build:` itself; the compose spec has `pull_policy: always`
+always pull regardless of a `build:` block being present, and only the explicit
+`build` command reads `build:`. So the change is additive, not a replacement:
 
 ```yaml
+build: .
 image: ghcr.io/mchristoffers/<app>:${APP_TAG:?APP_TAG is required}
-pull_policy: always      # replaces build:
+pull_policy: always
 ```
 
 **`pull_policy: always` is load-bearing.** `up -d` pulls only when the image is
 absent locally, so on a moving `:main`/`:staging` tag the deploy would re-run the
-previously pulled build, go green, and keep serving yesterday's code. That one
-line is the whole fix — not, as it first looks, a reason to avoid moving tags.
+previously pulled build, go green, and keep serving yesterday's code — `build:`
+being present doesn't change that, since `up`/`up -d` never falls back to it
+once `pull_policy: always` forces a pull. That one line is the whole fix — not,
+as it first looks, a reason to avoid moving tags, and not a reason to remove
+`build:` either.
 
 With it, track the branch tag and let `APP_TAG` be **static config** on the
 Coolify app (`main` / `staging`), written once by hand. The workflow then never
@@ -432,9 +454,10 @@ Prove the re-pull rather than assuming it: push twice and check that the running
 container's image digest changed under the unchanged tag. That is precisely the
 failure this design has to survive.
 
-Workflow order: test, build, push, **then** the existing webhook and poll. The
-job needs `permissions: packages: write`, and a failed push must fail the run —
-it is a failure mode the pre-registry workflow has no branch for.
+Workflow order: test, `docker compose build`, `docker compose push` (needs a
+prior `docker login ghcr.io` in the job), **then** the existing webhook and
+poll. The job needs `permissions: packages: write`, and a failed push must fail
+the run — it is a failure mode the pre-registry workflow has no branch for.
 
 For the manual rollback, `POST /api/v1/applications/{uuid}/envs` creates and
 answers 201; `PATCH` updates and also answers 201, but 404s while the key is
