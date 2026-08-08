@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "myclaude",
+  "version": "1.0.0",
+  "description": "Moritz's personal skills: Coolify Compose deploys, workflow discovery, and reading past Codex chats. Displayed as \"MyClaude\".",
+  "author": {
+    "name": "Moritz Christoffers"
+  },
+  "repository": "https://github.com/mchristoffers/MyClaude",
+  "keywords": ["coolify", "deploy", "workflows", "codex"]
+}

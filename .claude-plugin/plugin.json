@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "myclaude",
+  "displayName": "MyClaude",
+  "version": "1.0.0",
+  "description": "Moritz's personal Claude Code / Codex skills: Coolify Compose deploys, workflow discovery, and reading past Codex chats.",
+  "author": {
+    "name": "Moritz Christoffers"
+  },
+  "repository": "https://github.com/mchristoffers/MyClaude",
+  "keywords": ["coolify", "deploy", "workflows", "codex"]
+}

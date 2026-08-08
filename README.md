@@ -1,16 +1,20 @@
-# My Skills
+# MyClaude
 
 Personal [Agent Skills](https://agentskills.io/) for Claude Code, Codex, and
-other compatible coding agents, distributed with Vercel's
-[`skills`](https://github.com/vercel-labs/skills) CLI.
+other compatible coding agents. Published two ways from the same `skills/`
+tree:
+
+- **Claude Code plugin** `myclaude` (`.claude-plugin/plugin.json`) — installs
+  as one unit via Claude Code's native plugin system.
+- **[Agent Plugins](https://agent-plugins.org)** `myclaude` (root
+  `plugin.json`) — the OpenAI/Microsoft/Amazon/Cursor/Vercel cross-vendor
+  standard, for ChatGPT, Codex, Cursor, VS Code, GitHub Copilot, Kiro.
+
+Individual skills can still be pulled with Vercel's
+[`skills`](https://github.com/vercel-labs/skills) CLI (used below for Codex,
+which has no native plugin support yet).
 
 ## Available skills
-
-### `kimi`
-
-Runs the Kimi Code CLI to implement a given plan or task purely as code —
-nothing else: no planning, no worktree or branch management, no committing, no
-merging. Invoked explicitly by name; never model-invoked.
 
 ### `discover-workflows`
 
@@ -36,28 +40,49 @@ cloudflared tunnel with an explicit CNAME.
 
 ## Install
 
-Install a skill globally for Claude Code and Codex:
+### Claude Code (native plugin, whole bundle)
+
+Via a marketplace add + install:
 
 ```sh
-npx skills add mchristoffers/MyClaude --skill kimi --global \
-  --agent claude-code --agent codex
-
-npx skills add mchristoffers/MyClaude --skill discover-workflows --global \
-  --agent claude-code --agent codex
-
-npx skills add mchristoffers/MyClaude --skill deploy-coolify-compose --global \
-  --agent claude-code --agent codex
-
-npx skills add mchristoffers/MyClaude --skill read-codex-chat --global \
-  --agent claude-code --agent codex
+claude plugin marketplace add mchristoffers/MyClaude
+claude plugin install myclaude@MyClaude --scope user
 ```
 
-Update the installed skill after changes are published here:
+Or, without a marketplace, as a local skills-directory plugin (what this repo
+uses for Moritz's own machine — see `AGENTS.md`):
 
 ```sh
-npx skills update kimi --global --yes
-npx skills update discover-workflows --global --yes
+mkdir -p ~/.claude/skills/MyClaude
+rsync -a --exclude='.git' --exclude='.worktrees' \
+  /path/to/MyClaude/ ~/.claude/skills/MyClaude/
+```
+
+It then auto-loads next session as `myclaude@skills-dir` — no install step.
+Verify with `claude plugin list` / `claude plugin details myclaude@skills-dir`.
+
+### Codex, or any other Agent Plugins-compatible client
+
+Point the client at this repo (it carries a spec-compliant root `plugin.json`)
+per that client's own plugin-install flow, or install a single skill directly
+with Vercel's CLI:
+
+```sh
+npx skills add mchristoffers/MyClaude --skill deploy-coolify-compose --global \
+  --agent codex
+
+npx skills add mchristoffers/MyClaude --skill discover-workflows --global \
+  --agent codex
+
+npx skills add mchristoffers/MyClaude --skill read-codex-chat --global \
+  --agent codex
+```
+
+Update after changes are published here:
+
+```sh
 npx skills update deploy-coolify-compose --global --yes
+npx skills update discover-workflows --global --yes
 npx skills update read-codex-chat --global --yes
 ```
 
@@ -70,6 +95,9 @@ npx skills add mchristoffers/MyClaude --list
 ## Layout
 
 ```text
+.claude-plugin/
+└── plugin.json          # Claude Code native plugin manifest (name: myclaude)
+plugin.json               # Agent Plugins 1.0.0 manifest (cross-vendor)
 AGENTS.md
 reference/
 └── skill-frontmatter.md
@@ -82,8 +110,6 @@ skills/
 │   ├── SKILL.md
 │   └── agents/
 │       └── openai.yaml
-├── kimi/
-│   └── SKILL.md
 └── read-codex-chat/
     ├── SKILL.md
     └── agents/
