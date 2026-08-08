@@ -1,7 +1,0 @@
-interface:
-  display_name: "Discover Workflows"
-  short_description: "Find reusable workflows in chat history"
-  default_prompt: "Use $discover-workflows to analyze these chats and suggest reusable Agent Skills."
-
-policy:
-  allow_implicit_invocation: false
