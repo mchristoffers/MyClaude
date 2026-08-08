@@ -365,7 +365,7 @@ password per app. Wire it up while setting the app up, not after the first
 | `SMTP_HOST` | `smtp.zoho.eu` |
 | `SMTP_PORT` | `587` (STARTTLS) or `465` (SSL/wrapper) — both reachable from either host |
 | `SMTP_USER` | `moritz@mchristoffers.dev` — always the real mailbox, never an alias |
-| `SMTP_PASSWORD` | `***REMOVED-SECRET***` — Zoho app password `homelab-smtp`, shared by every app |
+| `SMTP_PASSWORD` | Zoho app password `homelab-smtp`, shared by every app — ask Moritz for the current value, don't hardcode it here |
 | `SMTP_FROM` | `noreply@mchristoffers.dev` (aliases: `admin@`, `contact@`, `hello@`, `claude@`, …) |
 | `SMTP_TLS_KIND` | `TLS` for 587, `SSL` for 465 |
 
@@ -507,9 +507,10 @@ replicate their shape rather than inventing a new one.
    `staticPasswords` entry for Moritz (`email`/`username: moritz`, a bcrypt
    `hash`). Generate the hash with
    `python3 -c "import bcrypt; print(bcrypt.hashpw(b'<password>', bcrypt.gensalt(12)).decode())"`
-   — no `htpasswd` binary needed. The static password across these deploys is
-   `moritz:***REMOVED-SECRET***`; reuse it rather than minting a new one per app
-   unless Moritz says otherwise.
+   — no `htpasswd` binary needed. There's one static password (`moritz:<pw>`)
+   reused across these deploys rather than minting a new one per app unless
+   Moritz says otherwise — ask Moritz for the current value, don't hardcode it
+   here.
    **`storage: type: memory` is a trap** — it wipes every session, refresh
    token, and signing key on any container restart (redeploy, host reboot,
    OOM), which reads as claude.ai "forgetting" auth about once a day. Use
