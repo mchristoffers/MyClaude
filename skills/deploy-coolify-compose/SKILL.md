@@ -493,104 +493,44 @@ Homeserver "internal only" pattern does not apply here even though there is only
 one real user. `paperlessmcp` and `appflowymcp` are the reference deploys;
 replicate their shape rather than inventing a new one.
 
-**Four services, always:**
+**Two services, always** — the MCP server plus
+[`oauth-agents`](https://github.com/mchristoffers/oauth-agents). Never Dex,
+oauth2-proxy, or a Caddy router: that was the old shape, it cost three
+containers and a config repo, and Dex cannot do RFC 7591 dynamic registration,
+so every connector setup ended with Moritz pasting a client ID by hand.
 
-1. The MCP server itself — pull whatever ready-made image implements it
-   (`ghcr.io/barryw/paperlessmcp`, `m2n2/appflowy-mcp`, …). It does no auth of
-   its own; anything reaching it over the internal network is already trusted.
-2. **Dex** (`dexidp/dex`) — a tiny, static-config OIDC server. Build it from a
-   one-line `Dockerfile` (`FROM dexidp/dex:latest` + `COPY config.yaml
-   /etc/dex/config.docker.yaml`) rather than mounting config, per the
-   never-bind-mount-a-config-file rule above. Exactly one `staticClients` entry
-   (`id: claude-mcp`, `secretEnv: DEX_CLIENT_SECRET`, redirect URI
-   `https://claude.ai/api/mcp/auth_callback`) and exactly one
-   `staticPasswords` entry for Moritz (`email`/`username: moritz`, a bcrypt
-   `hash`). Generate the hash with
-   `python3 -c "import bcrypt; print(bcrypt.hashpw(b'<password>', bcrypt.gensalt(12)).decode())"`
-   — no `htpasswd` binary needed. There's one static password (`moritz:<pw>`)
-   reused across these deploys rather than minting a new one per app unless
-   Moritz says otherwise — ask Moritz for the current value, don't hardcode it
-   here.
-   **`storage: type: memory` is a trap** — it wipes every session, refresh
-   token, and signing key on any container restart (redeploy, host reboot,
-   OOM), which reads as claude.ai "forgetting" auth about once a day. Use
-   `sqlite3` on a named volume from the very first deploy:
+1. The MCP server itself — whatever ready-made image implements it
+   (`ghcr.io/barryw/paperlessmcp`, `m2n2/appflowy-mcp`, …), `expose:`-only. It
+   does no auth of its own; anything reaching it internally is already trusted.
+2. `ghcr.io/mchristoffers/oauth-agents` — authorization server and gate in one.
+   It is the only service with a `ports:` mapping, and that port is what goes
+   on the Homeserver tunnel (see **Domains**). Four env vars, nothing else:
    ```yaml
-   storage:
-     type: sqlite3
-     config:
-       file: /var/dex/dex.db
+   ISSUER:   https://<app>-oauth.mchristoffers.dev   # must equal what clients call
+   UPSTREAM: http://<mcp-service>:<port>
+   USERNAME: ${GATEWAY_USERNAME:?}
+   PASSWORD: ${GATEWAY_PASSWORD:?}
+   RESOURCE: https://<app>-oauth.mchristoffers.dev/mcp   # only if MCP isn't at /
    ```
-   with `volumes: - dex_data:/var/dex` on the service.
-3. **oauth2-proxy** (`quay.io/oauth2-proxy/oauth2-proxy`) — the actual gate.
-   `OAUTH2_PROXY_PROVIDER: oidc`, `OAUTH2_PROXY_SKIP_JWT_BEARER_TOKENS: "true"`,
-   `OAUTH2_PROXY_EXTRA_JWT_ISSUERS: <public-issuer>=claude-mcp`,
-   `OAUTH2_PROXY_UPSTREAMS` pointing at the MCP service.
-   **Do not let it depend on live public DNS to boot.** By default it performs
-   OIDC discovery against `OAUTH2_PROXY_OIDC_ISSUER_URL` itself, which means it
-   cannot even start before the CNAME exists and Cloudflare can terminate TLS
-   for it — a needless hard dependency, since oauth2-proxy and dex already
-   share a Docker network. Set:
-   ```yaml
-   OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
-   OAUTH2_PROXY_LOGIN_URL: https://<app>-oauth.mchristoffers.dev/dex/auth   # browser-facing only
-   OAUTH2_PROXY_REDEEM_URL: http://dex:5556/dex/token                      # fetched by the container
-   OAUTH2_PROXY_OIDC_JWKS_URL: http://dex:5556/dex/keys                    # fetched by the container
-   ```
-   `OAUTH2_PROXY_OIDC_ISSUER_URL` and `OAUTH2_PROXY_EXTRA_JWT_ISSUERS` still
-   carry the public URL string — that only has to match the `iss` claim Dex
-   signs into tokens, not be network-reachable.
-   **`OAUTH2_PROXY_COOKIE_SECRET` must decode to exactly 16, 24, or 32 raw
-   bytes** — oauth2-proxy checks the *string* length, not a base64-decoded
-   length, so `openssl rand -base64 32` (44 chars) fails at boot with
-   `cookie_secret must be 16, 24, or 32 bytes`. Generate it with
-   `python3 -c "import secrets; print(secrets.token_urlsafe(24))"` (32
-   URL-safe characters = 32 bytes) instead.
-4. A **Caddy router** — same shape as the domains-section Caddy sidecar: build
-   from a one-line `Dockerfile` + `Caddyfile`, no bind mount. Routes `/dex/*` to
-   Dex, `/mcp*` to oauth2-proxy, and serves the static
-   `/.well-known/oauth-protected-resource` JSON claude.ai's connector setup
-   expects:
-   ```
-   handle /.well-known/oauth-protected-resource {
-       header Content-Type application/json
-       respond `{"resource":"https://<app>-oauth.mchristoffers.dev/mcp","authorization_servers":["https://<app>-oauth.mchristoffers.dev/dex"]}` 200
-   }
-   ```
-   This is what actually goes on the Homeserver tunnel port from **Domains** —
-   the router is the one service with a `ports:` mapping, everything else is
-   `expose:`-only on the app's own internal network.
+   **Mount `oauth_data:/data`.** The signing key is minted on first start and
+   kept there; without the volume every redeploy mints a new one and logs every
+   client out — the same failure Dex's `storage: memory` used to cause.
 
-**claude.ai's side needs a Client ID and Client Secret, entered by hand.** Dex
-only supports static clients, not RFC 7591 dynamic registration, so the
-"connect automatically" path claude.ai offers for some connectors does not
-apply. When adding the custom connector, Moritz needs: the server URL
-(`https://<app>-oauth.mchristoffers.dev/mcp`), Client ID `claude-mcp`, and the
-`DEX_CLIENT_SECRET` value — hand him that secret once, out of band, the same
-way any other Coolify secret is handled.
+**Nothing is entered by hand on claude.ai's side.** `/register` answers every
+Dynamic Client Registration with the same static client, so the connector
+configures itself from the server URL alone; loopback callbacks on any port are
+accepted too (RFC 8252), which is what Claude Code's local OAuth needs.
 
-**Prove the whole chain with `curl` before ever touching claude.ai's UI** — do
-not treat "the containers are up" as done:
+**Prove the chain with `curl` before touching claude.ai's UI** — "the containers
+are up" is not done. Run it against `http://127.0.0.1:<port>` on the Homeserver;
+the whole flow works before the public DNS record exists.
 
 ```sh
-# 1. static-password login through Dex, capturing the auth code
-curl -sSc jar "$BASE/dex/auth?client_id=claude-mcp&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&response_type=code&scope=openid%20profile%20email&state=x" -Lo /dev/null -w '%{url_effective}'
-curl -sSb jar -c jar --data-urlencode login=moritz --data-urlencode 'password=<pw>' "$LOGIN_URL" -o /dev/null -w '%{redirect_url}'
-# follow the second redirect too -> https://claude.ai/api/mcp/auth_callback?code=...
-
-# 2. exchange the code for a real access token
-curl -sS -u "claude-mcp:$DEX_CLIENT_SECRET" --data-urlencode grant_type=authorization_code \
-  --data-urlencode "code=$CODE" --data-urlencode redirect_uri=https://claude.ai/api/mcp/auth_callback \
-  "$BASE/dex/token"
-
-# 3. confirm unauthenticated /mcp is rejected, then call a real tool with the bearer token
-curl -o /dev/null -w '%{http_code}\n' "$BASE/mcp"                         # expect 302, not 200
-curl -X POST "$BASE/mcp" -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize", ...}'
+curl -o /dev/null -w '%{http_code}\n' "$BASE/mcp"          # expect 401, not 200
+curl -sS "$BASE/.well-known/oauth-protected-resource"      # resource + authorization_servers
+curl -sS -X POST "$BASE/register" -H 'Content-Type: application/json' -d '{}'
 ```
 
-Do this over `http://127.0.0.1:<router-port>` on the Homeserver itself — the
-whole flow works without the public DNS record existing yet, since the fix
-above already removed that dependency for everything except the very last
-step (claude.ai reaching the connector from outside).
+Then complete the PKCE login (`/authorize` → password form → `/token`) and call
+a real tool with the bearer token. `oauth-agents`' own `make test` in that repo
+covers the same ground end to end if you need the exact request shapes.
