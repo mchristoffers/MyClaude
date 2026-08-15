@@ -14,7 +14,7 @@ Dockerfile, GitHub Actions builds and pushes the image to GHCR — Coolify only
 ever pulls, never builds. Actions run checks, build+push, then trigger and wait
 on the deploy. No GitHub App, no `production` branch.
 
-Discover repo/app details live from OKF, GitHub, Coolify, DNS, and the repo.
+Discover repo/app details live from GitHub, Coolify, DNS, and the repo.
 Do not hardcode stale assumptions.
 
 ## Ask up front
@@ -40,7 +40,7 @@ native-vs-custom-domain):
 
 These are Moritz's calls, not judgment calls to absorb. Never settle one by
 inference — not from the app's nature, not from what a comparable app got, not
-from the target's resources, not from an OKF note. Recommend by all means, but
+from the target's resources. Recommend by all means, but
 the recommendation is not the answer, and offering it is not a substitute for
 waiting on his.
 
@@ -55,8 +55,8 @@ catching a wrong guess onto Moritz. This holds even when a previous app already
 answered the same question — a repeat answer still has to come from Moritz for
 this app, not be copied forward.
 
-Record every answer verbatim in the OKF page, so the next change starts from the
-decision rather than re-deriving it.
+Record every answer verbatim, so the next change starts from the decision
+rather than re-deriving it.
 
 **Image tags are already settled — do not ask, and do not argue it a second
 time.** Moritz's standing choice, stated 2026-07-29 while setting up Paperless:
@@ -242,7 +242,7 @@ Let's Encrypt ACME endpoint, and remove any superseded master-1 redirect. The
 Finish native-client setup too. For Paperless/Paperparrot, connect Tailscale on
 iOS first, enter the exact custom origin without an extra path, then use the app
 credentials; never configure the superseded `*.ts.net` name. Test login and sync,
-and record the client name and non-secret setup values in the app's OKF page.
+and record the client name and non-secret setup values.
 
 The `docker` node is `tag:server`. Define the Service (`tcp:443`), grant tailnet
 members access to it, and auto-approve `tag:server` in the policy. Tailscale
@@ -371,7 +371,6 @@ password per app. Wire it up while setting the app up, not after the first
 
 Aliases all land in `moritz@`'s inbox. Do not mint a second app password; Zoho
 has no API for it, so it would cost a browser session and split the secret.
-Full background: `/home/moritz/okf/infra/zoho-api.md`.
 
 Keep those neutral names in Compose and map them to the app's own variables
 inside the service, so the same block copies across apps unchanged:
@@ -406,7 +405,7 @@ Cloudflare for a minute or two. Expected — do not debug it as an outage, and
 avoid back-to-back pushes.
 
 Record target, exposure choice, app UUIDs, domains, Compose path, secrets, and
-test results in `/home/moritz/okf/infra/<app>-<target>.md`.
+test results.
 
 ## Build & registry
 
