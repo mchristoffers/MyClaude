@@ -10,7 +10,7 @@ description: Do online research/web search by delegating to Gemini CLI as an age
 # Web research via Gemini CLI
 
 The built-in `WebSearch` and `WebFetch` tools are denied by a user-level
-PreToolUse hook (`~/.claude/hooks/deny-web-tools.sh`) — don't reach for them.
+PreToolUse hook in `~/.claude/settings.json` — don't reach for them.
 Delegate the research question to Gemini CLI instead, which runs as its own
 agent with a built-in web search tool: it can issue multiple searches, follow
 links, and synthesize an answer on its own:
