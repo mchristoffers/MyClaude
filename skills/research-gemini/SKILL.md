@@ -1,6 +1,6 @@
 ---
 name: research-gemini
-description: Do online research/web search by delegating to Gemini CLI as an agent, instead of the built-in WebSearch tool. Use for ANY online lookup — current info, docs, sources, "what's the latest on X".
+description: Do online research/web search by delegating to Gemini CLI as an agent, instead of the built-in WebSearch/WebFetch tools (both are denied on this machine). Use for ANY online lookup — current info, docs, sources, "what's the latest on X".
 ---
 
 > Source: `~/git/mchristoffers/MyClaude/skills/research-gemini/SKILL.md`. Learned
@@ -9,10 +9,11 @@ description: Do online research/web search by delegating to Gemini CLI as an age
 
 # Web research via Gemini CLI
 
-Don't use the built-in `WebSearch` tool. Instead delegate the research
-question to Gemini CLI, which runs as its own agent with a built-in web
-search tool — it can issue multiple searches, follow links, and synthesize
-an answer on its own:
+The built-in `WebSearch` and `WebFetch` tools are denied by a user-level
+PreToolUse hook (`~/.claude/hooks/deny-web-tools.sh`) — don't reach for them.
+Delegate the research question to Gemini CLI instead, which runs as its own
+agent with a built-in web search tool: it can issue multiple searches, follow
+links, and synthesize an answer on its own:
 
 ```sh
 scripts/research.sh "<question>"
@@ -23,8 +24,9 @@ current stable version of X and when did it release, with sources"), not a
 bag of keywords — Gemini CLI will plan its own searches.
 
 It prints Gemini's final synthesized answer to stdout. Treat it like a
-research assistant's report: cite it, but fetch a source directly (e.g. with
-`WebFetch`) if you need to verify a specific claim or need full page content.
+research assistant's report: cite it, and re-ask it (pointing at the specific
+URL) if you need to verify a claim. Need the raw page instead? Fetch it in
+Bash — `curl -sL <url>` — never `WebFetch`.
 
 Override the model with `GEMINI_RESEARCH_MODEL` (e.g. `gemini-2.5-pro` for
 harder research; default is Gemini CLI's own default model).
