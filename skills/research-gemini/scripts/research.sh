@@ -11,6 +11,19 @@ if [ -z "${GEMINI_API_KEY:-}" ] && [ -f "$HOME/.bashrc" ]; then
 fi
 
 question="${1:?usage: research.sh <question>}"
+
+# Gemini CLI reads the same ~/.agents/skills tree, so it can discover this very
+# skill and shell back out to this script — an infinite delegation loop that
+# just hangs. The skill is disabled for Gemini at user scope
+# (`gemini skills disable research-gemini --scope user`); this guard catches the
+# case where that setting is gone, and tells the child what to do instead.
+if [ -n "${GEMINI_RESEARCH_ACTIVE:-}" ]; then
+  echo "You are already the research agent — do not call research.sh." >&2
+  echo "Use your own google_web_search tool and answer directly." >&2
+  exit 1
+fi
+export GEMINI_RESEARCH_ACTIVE=1
+
 model_flag=()
 if [ -n "${GEMINI_RESEARCH_MODEL:-}" ]; then
   model_flag=(-m "$GEMINI_RESEARCH_MODEL")
