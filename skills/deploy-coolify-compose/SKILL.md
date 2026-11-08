@@ -139,7 +139,8 @@ working tree is not materialised there. A relative `./conf/app.conf` mount is
 rewritten to an absolute host path and registered in `local_file_volumes` with
 `is_directory=true` and empty content, so Docker creates a *directory* and the
 container dies with `not a directory`. Ship config by baking it into a small
-image (`build:` context with a `COPY`, plus a syntax check in the Dockerfile).
+image (a `COPY` plus a syntax check in the Dockerfile, built by Actions like any
+other own image — see **Build & registry**).
 Pasting it into Coolify's file-mount UI instead splits the source of truth.
 
 **Paperless AI:** prefer Paperless v3's native `PAPERLESS_AI_*` configuration
@@ -426,28 +427,31 @@ with `GITHUB_TOKEN` and no new credential. A self-hosted registry would make the
 Homeserver a single point of failure for production deploys.
 
 **Nothing changes on the Coolify side.** `build_pack` stays `dockercompose`, and
-`docker_compose_custom_build_command` / `..._start_command` stay empty — they are
-for flag overrides, not for switching building off. **Keep `build:` in the
-service, do not strip it** — Actions needs it so `docker compose build` (against
-this same file) is what produces the image to push, instead of a separate
-Dockerfile-only build command. `pull_policy: always` is what stops Coolify from
-ever invoking that `build:` itself; the compose spec has `pull_policy: always`
-always pull regardless of a `build:` block being present, and only the explicit
-`build` command reads `build:`. So the change is additive, not a replacement:
+`docker_compose_custom_build_command` / `..._start_command` stay empty.
+
+**The Compose file has no `build:` — Coolify builds whenever it sees one.**
+Verified on Homeserver Coolify 4.1 (eizberg, 2026-11-08): with `build:` *and*
+`pull_policy: always`, every deploy still ran `docker compose build` (~65 s),
+then pulled the GHCR image over the result. Compose keeps only:
 
 ```yaml
-build: .
 image: ghcr.io/mchristoffers/<app>:${APP_TAG:?APP_TAG is required}
 pull_policy: always
 ```
 
+The build definition lives in `docker-bake.hcl` (one target per own image,
+`tags` = `:<branch>` + `:sha-<7>`, `attest` with provenance/SBOM disabled so
+GHCR holds one version per tag). Actions runs
+`docker buildx bake -f docker-bake.hcl --push` — the `-f` is required, otherwise
+bake also reads the Compose file and fails on `${APP_TAG:?}`. Reference:
+`mchristoffers/eizberg`. Older apps that still carry `build:` lose about a
+minute per deploy; strip it when touching them.
+
 **`pull_policy: always` is load-bearing.** `up -d` pulls only when the image is
 absent locally, so on a moving `:main`/`:staging` tag the deploy would re-run the
 previously pulled build, go green, and keep serving yesterday's code — `build:`
-being present doesn't change that, since `up`/`up -d` never falls back to it
-once `pull_policy: always` forces a pull. That one line is the whole fix — not,
-as it first looks, a reason to avoid moving tags, and not a reason to remove
-`build:` either.
+That one line is the whole fix — not, as it first looks, a reason to avoid
+moving tags.
 
 With it, track the branch tag and let `APP_TAG` be **static config** on the
 Coolify app (`main` / `staging`), written once by hand. The workflow then never
@@ -463,9 +467,9 @@ Prove the re-pull rather than assuming it: push twice and check that the running
 container's image digest changed under the unchanged tag. That is precisely the
 failure this design has to survive.
 
-Workflow order: test, `docker compose build`, `docker compose push` (needs a
-prior `docker login ghcr.io` in the job), **then** the existing webhook and
-poll. The job needs `permissions: packages: write`, and a failed push must fail
+Workflow order: test, `docker buildx bake -f docker-bake.hcl --push` (prior
+`docker login ghcr.io`; GHA layer cache via `--set <target>.cache-from=type=gha`),
+**then** the existing webhook and poll. The job needs `permissions: packages: write`, and a failed push must fail
 the run — it is a failure mode the pre-registry workflow has no branch for.
 
 For the manual rollback, `POST /api/v1/applications/{uuid}/envs` creates and
@@ -481,7 +485,10 @@ or the deployed image reports `unknown`.
 Each target needs one `docker login ghcr.io` with a read-only PAT, in the same
 Docker context Coolify deploys from (root). It survives stack recreates; record
 it, or a host move ends in `manifest unknown`. Set a GHCR retention policy at the
-same time. master-1 already has such a login, but with a broad `gho_` token —
+same time: a `cleanup` job after `deploy` that keeps the branch tag plus the 10
+newest `sha-` tags (rollback targets) and deletes older versions via
+`DELETE /users/<owner>/packages/container/<pkg>/versions/<id>` with
+`GITHUB_TOKEN` (`packages: write`; works because Actions created the package). master-1 already has such a login, but with a broad `gho_` token —
 not the read-only PAT it should be.
 
 ## MCP servers (claude.ai web connector)
